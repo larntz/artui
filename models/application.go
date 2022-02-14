@@ -2,8 +2,9 @@ package models
 
 // Application models an argocd application
 type Application struct {
-	Name   string
-	Status string
+	Name       string
+	Status     string
+	LongStatus string
 }
 
 // Title returns the application title

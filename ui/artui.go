@@ -23,15 +23,20 @@ type ArTUIModel struct {
 }
 
 // InitialModel creates the initial model struct
-func InitialModel() ArTUIModel {
-	apps := make([]list.Item, 0, 500)
-	apps = append(apps, models.Application{Name: "apps", Status: "Synced / Healthy"})
-	apps = append(apps, models.Application{Name: "argocd", Status: "Synced / Progressing"})
-	apps = append(apps, models.Application{Name: "prometheus", Status: "Synced / Progressing"})
-	apps = append(apps, models.Application{Name: "traefik", Status: "Synced / Healthy"})
-	apps = append(apps, models.Application{Name: "webapp", Status: "OutOfSync / Missing"})
+func InitialModel(apps []models.Application) ArTUIModel {
+	// apps := make([]list.Item, 0, 500)
+	// apps = append(apps, models.Application{Name: "apps", Status: "Synced / Healthy"})
+	// apps = append(apps, models.Application{Name: "argocd", Status: "Synced / Progressing"})
+	// apps = append(apps, models.Application{Name: "prometheus", Status: "Synced / Progressing"})
+	// apps = append(apps, models.Application{Name: "traefik", Status: "Synced / Healthy"})
+	// apps = append(apps, models.Application{Name: "webapp", Status: "OutOfSync / Missing"})
 
-	appList := list.New(apps, list.NewDefaultDelegate(), 0, 25)
+	var appsListModel []list.Item
+	for _, v := range apps {
+		appsListModel = append(appsListModel, v)
+	}
+
+	appList := list.New(appsListModel, list.NewDefaultDelegate(), 0, 25)
 	//appList.Title = "ArgoCD Applications on <cluster>"
 	appList.SetShowTitle(false)
 	appList.SetShowPagination(true)
@@ -39,7 +44,8 @@ func InitialModel() ArTUIModel {
 	appList.SetShowStatusBar(false)
 
 	return ArTUIModel{
-		Apps: appList,
+		Ready: false,
+		Apps:  appList,
 	}
 }
 

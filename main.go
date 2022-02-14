@@ -20,10 +20,10 @@ func main() {
 	}
 	defer f.Close()
 	log.Println("Application Start")
-	k8s.Connect("/home/larntz/.kube/config")
+	apps := k8s.Connect("/home/larntz/.kube/config")
 
 	// start application
-	p := tea.NewProgram(ui.InitialModel(), tea.WithAltScreen())
+	p := tea.NewProgram(ui.InitialModel(apps), tea.WithAltScreen())
 	if err := p.Start(); err != nil {
 		log.Fatal(err)
 	}
