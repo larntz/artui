@@ -2,12 +2,14 @@ package ui
 
 import (
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/muesli/reflow/wrap"
 
 	"github.com/larntz/artui/models"
 	"github.com/larntz/artui/utils"
@@ -28,8 +30,12 @@ func InitialModel() ArTUIModel {
 	apps = append(apps, models.Application{Name: "prometheus", Status: "Synced / Progressing"})
 	apps = append(apps, models.Application{Name: "traefik", Status: "Synced / Healthy"})
 	apps = append(apps, models.Application{Name: "webapp", Status: "OutOfSync / Missing"})
+
 	appList := list.New(apps, list.NewDefaultDelegate(), 0, 25)
-	appList.Title = "ArgoCD Applications on <cluster>"
+	//appList.Title = "ArgoCD Applications on <cluster>"
+	appList.SetShowTitle(false)
+	appList.SetShowPagination(true)
+	appList.SetShowHelp(false)
 	appList.SetShowStatusBar(false)
 
 	return ArTUIModel{
@@ -69,13 +75,15 @@ func (m ArTUIModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 			// we can initialize the viewport. The initial dimensions come in
 			// quickly, though asynchronously, which is why we wait for them
 			// here.
-			// m.viewport.HighPerformanceRendering = useHighPerformanceRenderer
+			m.Viewport.HighPerformanceRendering = true
 			m.Viewport = viewport.New(msg.Width, msg.Height-verticalMarginHeight-1)
 			m.Viewport.YPosition = headerHeight
 			m.Viewport.Style.Border(lipgloss.ThickBorder())
 			m.Viewport.Style.BorderForeground(lipgloss.Color("198"))
-			m.Apps.SetHeight(m.Viewport.Height)
-			m.Viewport.SetContent(AppsJSON)
+			m.Viewport.SetContent(
+				wrap.String(AppsJSON, msg.Width-25),
+			)
+			log.Printf("m.Ready, msg.Width %d, viewport.Width %d, appList.Width %d", msg.Width, m.Viewport.Width, m.Apps.Width())
 
 			// This is only necessary for high performance rendering, which in
 			// most cases you won't need.
@@ -84,8 +92,12 @@ func (m ArTUIModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 			m.Viewport.YPosition = headerHeight + 1
 			m.Ready = true
 		} else {
-			m.Viewport.Width = msg.Width
+			m.Viewport.Width = msg.Width - m.Apps.Width()
 			m.Viewport.Height = msg.Height - verticalMarginHeight
+			m.Viewport.SetContent(
+				wrap.String(AppsJSON, m.Viewport.Width-25),
+			)
+			log.Printf("m.Ready, msg.Width %d, viewport.Width %d, appList.Width %d", msg.Width, m.Viewport.Width, m.Apps.Width())
 		}
 
 	}
@@ -93,8 +105,6 @@ func (m ArTUIModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 	cmds = append(cmds, cmd)
 
 	return m, tea.Batch(cmds...)
-
-	// return m, nil
 }
 
 // View the model?
@@ -103,18 +113,18 @@ func (m ArTUIModel) View() string {
 	// return style.Render(m.viewport.View())
 	return fmt.Sprintf("%s\n%s\n%s\n",
 		m.headerView(),
-		lipgloss.JoinHorizontal(lipgloss.Top, m.Apps.View(), m.Viewport.View()),
+		lipgloss.JoinHorizontal(lipgloss.Top, appListStyle.Render(m.Apps.View()), viewportStyle.Render(m.Viewport.View())),
 		m.footerView())
 }
 
 func (m ArTUIModel) headerView() string {
 	title := fmt.Sprintf("ArTUI: Managing ArgoCD Apps")
-	line := strings.Repeat(" ", utils.Max(0, m.Viewport.Width-lipgloss.Width(HeaderStyle.Render(title))))
-	return HeaderStyle.Render(lipgloss.JoinHorizontal(lipgloss.Center, title, line))
+	line := strings.Repeat(" ", utils.Max(0, m.Viewport.Width-lipgloss.Width(headerStyle.Render(title))))
+	return headerStyle.Render(lipgloss.JoinHorizontal(lipgloss.Center, title, line))
 }
 
 func (m ArTUIModel) footerView() string {
-	message := fmt.Sprintf("footer")
-	line := strings.Repeat(" ", utils.Max(0, m.Viewport.Width-lipgloss.Width(FooterStyle.Render(message))))
-	return FooterStyle.Render(lipgloss.JoinHorizontal(lipgloss.Center, message, line))
+	message := fmt.Sprintf("https://github.com/larntz")
+	line := strings.Repeat(" ", utils.Max(0, m.Viewport.Width-lipgloss.Width(footerStyle.Render(message))))
+	return footerStyle.Render(lipgloss.JoinHorizontal(lipgloss.Center, line, message))
 }

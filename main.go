@@ -7,6 +7,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 
+	"github.com/larntz/artui/k8s"
 	"github.com/larntz/artui/ui"
 )
 
@@ -19,6 +20,7 @@ func main() {
 	}
 	defer f.Close()
 	log.Println("Application Start")
+	k8s.Connect("/home/larntz/.kube/config")
 
 	// start application
 	p := tea.NewProgram(ui.InitialModel(), tea.WithAltScreen())
