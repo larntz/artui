@@ -50,7 +50,7 @@ func Connect(kubeconfig string) []models.Application {
 		if err != nil {
 			panic("yaml unmarshal failure")
 		}
-		_, err = yaml.Marshal(appResources.Items[i].Object["status"].(map[string]interface{})["sync"].(map[string]interface{})["status"])
+		status, err := yaml.Marshal(appResources.Items[i].Object["status"]) // .(map[string]interface{})["sync"].(map[string]interface{})["status"])
 		if err != nil {
 			panic("yaml unmarshal failure")
 		}
@@ -59,7 +59,7 @@ func Connect(kubeconfig string) []models.Application {
 		apps = append(apps, models.Application{
 			Name:       appResources.Items[i].GetName(),
 			Status:     fmt.Sprintf("%s", string(y)),
-			LongStatus: string(y),
+			LongStatus: string(status),
 		})
 
 		// log.Printf("app %d, %s", i, apps.Items[i].GetName())

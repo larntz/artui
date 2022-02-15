@@ -17,9 +17,10 @@ import (
 
 // ArTUIModel is the bubbletea app model
 type ArTUIModel struct {
-	Ready    bool
-	Apps     list.Model
-	Viewport viewport.Model
+	Ready        bool
+	Applications []models.Application
+	List         list.Model
+	Viewport     viewport.Model
 }
 
 // InitialModel creates the initial model struct
@@ -44,8 +45,9 @@ func InitialModel(apps []models.Application) ArTUIModel {
 	appList.SetShowStatusBar(false)
 
 	return ArTUIModel{
-		Ready: false,
-		Apps:  appList,
+		Ready:        false,
+		List:         appList,
+		Applications: apps,
 	}
 }
 
@@ -68,6 +70,27 @@ func (m ArTUIModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "q", "esc", "ctrl+c":
 			return m, tea.Quit
+		case "tab":
+			log.Printf("cursor() = %d, len(VisibleItems) = %d", m.List.Cursor(), len(m.List.VisibleItems()))
+			if m.List.Cursor() == len(m.List.VisibleItems())-1 {
+				m.List.Select(0)
+			} else {
+				m.List.CursorDown()
+			}
+			var content string
+			for _, v := range m.Applications {
+				if v.Name == m.List.SelectedItem().FilterValue() {
+					content = v.LongStatus
+					break
+				}
+			}
+			m.Viewport.SetContent(
+				wrap.String(content, m.Viewport.Width-25),
+			)
+			m.Viewport.YOffset = 0
+
+			return m, nil
+
 		}
 
 	case tea.WindowSizeMsg:
@@ -86,10 +109,17 @@ func (m ArTUIModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 			m.Viewport.YPosition = headerHeight
 			m.Viewport.Style.Border(lipgloss.ThickBorder())
 			m.Viewport.Style.BorderForeground(lipgloss.Color("198"))
+			var content string
+			for _, v := range m.Applications {
+				if v.Name == m.List.SelectedItem().FilterValue() {
+					content = v.LongStatus
+					break
+				}
+			}
 			m.Viewport.SetContent(
-				wrap.String(AppsJSON, msg.Width-25),
+				wrap.String(content, msg.Width-25),
 			)
-			log.Printf("m.Ready, msg.Width %d, viewport.Width %d, appList.Width %d", msg.Width, m.Viewport.Width, m.Apps.Width())
+			log.Printf("m.Ready, msg.Width %d, viewport.Width %d, appList.Width %d", msg.Width, m.Viewport.Width, m.List.Width())
 
 			// This is only necessary for high performance rendering, which in
 			// most cases you won't need.
@@ -98,12 +128,19 @@ func (m ArTUIModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 			m.Viewport.YPosition = headerHeight + 1
 			m.Ready = true
 		} else {
-			m.Viewport.Width = msg.Width - m.Apps.Width()
+			m.Viewport.Width = msg.Width - m.List.Width()
 			m.Viewport.Height = msg.Height - verticalMarginHeight
+			var content string
+			for _, v := range m.Applications {
+				if v.Name == m.List.SelectedItem().FilterValue() {
+					content = v.LongStatus
+					break
+				}
+			}
 			m.Viewport.SetContent(
-				wrap.String(AppsJSON, m.Viewport.Width-25),
+				wrap.String(content, m.Viewport.Width-25),
 			)
-			log.Printf("m.Ready, msg.Width %d, viewport.Width %d, appList.Width %d", msg.Width, m.Viewport.Width, m.Apps.Width())
+			log.Printf("m.Ready, msg.Width %d, viewport.Width %d, appList.Width %d", msg.Width, m.Viewport.Width, m.List.Width())
 		}
 
 	}
@@ -119,7 +156,7 @@ func (m ArTUIModel) View() string {
 	// return style.Render(m.viewport.View())
 	return fmt.Sprintf("%s\n%s\n%s\n",
 		m.headerView(),
-		lipgloss.JoinHorizontal(lipgloss.Top, appListStyle.Render(m.Apps.View()), viewportStyle.Render(m.Viewport.View())),
+		lipgloss.JoinHorizontal(lipgloss.Top, appListStyle.Render(m.List.View()), viewportStyle.Render(m.Viewport.View())),
 		m.footerView())
 }
 

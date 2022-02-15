@@ -15,3 +15,6 @@ func (i Application) Description() string { return i.Status }
 
 // FilterValue is what our list is filtered by
 func (i Application) FilterValue() string { return i.Name }
+
+// GetLongStatus get's the applications long status information
+func (i Application) GetLongStatus() string { return i.LongStatus }
