@@ -6,7 +6,6 @@ package k8s
 
 import (
 	"context"
-	"fmt"
 	"log"
 
 	"gopkg.in/yaml.v3"
@@ -21,8 +20,8 @@ import (
 
 var appResource = schema.GroupVersionResource{Group: "argoproj.io", Version: "v1alpha1", Resource: "applications"}
 
-// Connect to the api-server
-func Connect(kubeconfig string) []models.Application {
+// GetApplications from the api-server
+func GetApplications(kubeconfig string) []models.Application {
 	// tpl, err := template.New("app").Parse("# {{ .Name }}\n\n- {{ .Status }}\n")
 	// if err != nil {
 	// 	panic("template is broke")
@@ -58,7 +57,7 @@ func Connect(kubeconfig string) []models.Application {
 		log.Printf("%s", appResources.Items[i].GetName())
 		apps = append(apps, models.Application{
 			Name:       appResources.Items[i].GetName(),
-			Status:     fmt.Sprintf("%s", string(y)),
+			Status:     string(y),
 			LongStatus: string(status),
 		})
 

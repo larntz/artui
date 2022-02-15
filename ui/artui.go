@@ -1,13 +1,16 @@
 package ui
 
 import (
+	"bytes"
 	"fmt"
 	"log"
 	"strings"
+	"text/template"
 
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/glamour"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/muesli/reflow/wrap"
 
@@ -25,13 +28,6 @@ type ArTUIModel struct {
 
 // InitialModel creates the initial model struct
 func InitialModel(apps []models.Application) ArTUIModel {
-	// apps := make([]list.Item, 0, 500)
-	// apps = append(apps, models.Application{Name: "apps", Status: "Synced / Healthy"})
-	// apps = append(apps, models.Application{Name: "argocd", Status: "Synced / Progressing"})
-	// apps = append(apps, models.Application{Name: "prometheus", Status: "Synced / Progressing"})
-	// apps = append(apps, models.Application{Name: "traefik", Status: "Synced / Healthy"})
-	// apps = append(apps, models.Application{Name: "webapp", Status: "OutOfSync / Missing"})
-
 	var appsListModel []list.Item
 	for _, v := range apps {
 		appsListModel = append(appsListModel, v)
@@ -53,7 +49,6 @@ func InitialModel(apps []models.Application) ArTUIModel {
 
 // Init the app model
 func (m ArTUIModel) Init() tea.Cmd {
-	// return tea.Batch(tick(), tea.EnterAltScreen)
 	return tea.EnterAltScreen
 }
 
@@ -63,6 +58,10 @@ func (m ArTUIModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 		cmd  tea.Cmd
 		cmds []tea.Cmd
 	)
+	tpl, err := template.New("status").Parse(statusTemplate)
+	if err != nil {
+		panic("can't create template")
+	}
 
 	switch msg := message.(type) {
 
@@ -70,25 +69,52 @@ func (m ArTUIModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "q", "esc", "ctrl+c":
 			return m, tea.Quit
-		case "tab":
+		case "tab", "n":
 			log.Printf("cursor() = %d, len(VisibleItems) = %d", m.List.Cursor(), len(m.List.VisibleItems()))
 			if m.List.Cursor() == len(m.List.VisibleItems())-1 {
 				m.List.Select(0)
 			} else {
 				m.List.CursorDown()
 			}
-			var content string
 			for _, v := range m.Applications {
 				if v.Name == m.List.SelectedItem().FilterValue() {
-					content = v.LongStatus
+					//content := fmt.Sprintf("# %s\n\n```yaml\n%s\n```\n\n", v.Name, v.LongStatus)
+					buf := new(bytes.Buffer)
+					tpl.Execute(buf, v)
+					content, err := glamour.Render(buf.String(), "dark")
+					if err != nil {
+						panic(err)
+					}
+					m.Viewport.SetContent(
+						content,
+					)
+					m.Viewport.YOffset = 0
 					break
 				}
 			}
-			m.Viewport.SetContent(
-				wrap.String(content, m.Viewport.Width-25),
-			)
-			m.Viewport.YOffset = 0
-
+			return m, nil
+		case "shift+tab", "p":
+			log.Printf("cursor() = %d, len(VisibleItems) = %d", m.List.Cursor(), len(m.List.VisibleItems()))
+			if m.List.Cursor() == 0 {
+				m.List.Select(len(m.List.VisibleItems()) - 1)
+			} else {
+				m.List.CursorUp()
+			}
+			for _, v := range m.Applications {
+				if v.Name == m.List.SelectedItem().FilterValue() {
+					buf := new(bytes.Buffer)
+					tpl.Execute(buf, v)
+					content, err := glamour.Render(buf.String(), "dark")
+					if err != nil {
+						panic(err)
+					}
+					m.Viewport.SetContent(
+						content,
+					)
+					m.Viewport.YOffset = 0
+					break
+				}
+			}
 			return m, nil
 
 		}
@@ -107,18 +133,23 @@ func (m ArTUIModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 			m.Viewport.HighPerformanceRendering = true
 			m.Viewport = viewport.New(msg.Width, msg.Height-verticalMarginHeight-1)
 			m.Viewport.YPosition = headerHeight
-			m.Viewport.Style.Border(lipgloss.ThickBorder())
-			m.Viewport.Style.BorderForeground(lipgloss.Color("198"))
-			var content string
+			// m.Viewport.Style.Border(lipgloss.ThickBorder())
+			// m.Viewport.Style.BorderForeground(lipgloss.Color("198"))
 			for _, v := range m.Applications {
 				if v.Name == m.List.SelectedItem().FilterValue() {
-					content = v.LongStatus
+					buf := new(bytes.Buffer)
+					tpl.Execute(buf, v)
+					content, err := glamour.Render(buf.String(), "dark")
+					if err != nil {
+						panic(err)
+					}
+
+					m.Viewport.SetContent(
+						wrap.String(content, msg.Width-25),
+					)
 					break
 				}
 			}
-			m.Viewport.SetContent(
-				wrap.String(content, msg.Width-25),
-			)
 			log.Printf("m.Ready, msg.Width %d, viewport.Width %d, appList.Width %d", msg.Width, m.Viewport.Width, m.List.Width())
 
 			// This is only necessary for high performance rendering, which in
@@ -129,17 +160,22 @@ func (m ArTUIModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 			m.Ready = true
 		} else {
 			m.Viewport.Width = msg.Width - m.List.Width()
-			m.Viewport.Height = msg.Height - verticalMarginHeight
-			var content string
+			m.Viewport.Height = msg.Height - verticalMarginHeight - 1
 			for _, v := range m.Applications {
 				if v.Name == m.List.SelectedItem().FilterValue() {
-					content = v.LongStatus
+					content := fmt.Sprintf("# %s\n\n```yaml\n%s\n```\n\n", v.Name, v.LongStatus)
+					buf := new(bytes.Buffer)
+					tpl.Execute(buf, v)
+					content, err := glamour.Render(buf.String(), "dark")
+					if err != nil {
+						panic(err)
+					}
+					m.Viewport.SetContent(
+						wrap.String(content, m.Viewport.Width-25),
+					)
 					break
 				}
 			}
-			m.Viewport.SetContent(
-				wrap.String(content, m.Viewport.Width-25),
-			)
 			log.Printf("m.Ready, msg.Width %d, viewport.Width %d, appList.Width %d", msg.Width, m.Viewport.Width, m.List.Width())
 		}
 

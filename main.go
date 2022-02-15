@@ -20,7 +20,7 @@ func main() {
 	}
 	defer f.Close()
 	log.Println("Application Start")
-	apps := k8s.Connect("/home/larntz/.kube/config")
+	apps := k8s.GetApplications("/home/larntz/.kube/config")
 
 	// start application
 	p := tea.NewProgram(ui.InitialModel(apps), tea.WithAltScreen())
