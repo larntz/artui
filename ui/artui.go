@@ -37,8 +37,8 @@ func InitialModel(apps []models.Application) ArTUIModel {
 	appList.Title = "App List"
 	appList.SetShowTitle(true)
 	appList.SetShowPagination(true)
-	//appList.SetShowHelp(false)
-	appList.SetShowStatusBar(true)
+	appList.SetShowHelp(false)
+	appList.SetShowStatusBar(false)
 	appList.SetShowFilter(true)
 	appList.SetFilteringEnabled(true)
 
@@ -73,6 +73,7 @@ func (m ArTUIModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 			log.Printf("got key '%s' : show filter?", msg.String())
 			m.List.SetShowFilter(true)
 			m.List.FilterInput.Focus()
+			m.List.Update(msg)
 			return m, nil
 
 		case "q", "esc", "ctrl+c":
@@ -134,6 +135,7 @@ func (m ArTUIModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 			// quickly, though asynchronously, which is why we wait for them
 			// here.
 			m.Viewport.HighPerformanceRendering = true
+			m.Viewport.MouseWheelEnabled = true
 			m.Viewport = viewport.New(msg.Width, msg.Height-verticalMarginHeight-1)
 			m.Viewport.YPosition = headerHeight
 			m.List.SetHeight(msg.Height - verticalMarginHeight - 1)
@@ -208,7 +210,7 @@ func (m ArTUIModel) headerView() string {
 }
 
 func (m ArTUIModel) footerView() string {
-	message := fmt.Sprintf("https://github.com/larntz")
+	message := fmt.Sprintf("https://github.com/larntz/artui")
 	line := strings.Repeat(" ", utils.Max(0, m.Viewport.Width-lipgloss.Width(footerStyle.Render(message))))
 	return footerStyle.Render(lipgloss.JoinHorizontal(lipgloss.Center, line, message))
 }

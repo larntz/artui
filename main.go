@@ -23,7 +23,7 @@ func main() {
 	apps := k8s.GetApplications("/home/larntz/.kube/config")
 
 	// start application
-	p := tea.NewProgram(ui.InitialModel(apps), tea.WithAltScreen())
+	p := tea.NewProgram(ui.InitialModel(apps), tea.WithAltScreen(), tea.WithMouseCellMotion())
 	if err := p.Start(); err != nil {
 		log.Fatal(err)
 	}

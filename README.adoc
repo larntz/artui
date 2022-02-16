@@ -1,0 +1,26 @@
+= ArTUI
+
+A program (eventually) for managing ArgoCD Applications.
+
+== TODO
+
+=== Priority
+
+* [ ] loading screen
+* [ ] split modules so they can be updated separately and take focus
+* [ ] use argocd code to generate k8s code for working with argo custom resources
+* [ ] perform argo cd actions 
+  * [ ] refresh
+  * [ ] hard refresh
+  * [ ] sync
+  * [ ] remove finalizers, delete app, etc. 
+  * [ ] manage ssh keys
+  * [ ] manage gpg keys
+  * [ ] manage repos
+* [ ] view application metrics (based on resources in application object)
+
+=== Someday 
+
+* [ ] theme
+* [ ] customize key bindings
+

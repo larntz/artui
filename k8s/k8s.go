@@ -49,7 +49,7 @@ func GetApplications(kubeconfig string) []models.Application {
 		if err != nil {
 			panic("yaml unmarshal failure")
 		}
-		status, err := yaml.Marshal(appResources.Items[i].Object["status"]) // .(map[string]interface{})["sync"].(map[string]interface{})["status"])
+		status, err := yaml.Marshal(appResources.Items[i]) // .Object["status"]) // .(map[string]interface{})["sync"].(map[string]interface{})["status"])
 		if err != nil {
 			panic("yaml unmarshal failure")
 		}
