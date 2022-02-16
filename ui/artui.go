@@ -34,11 +34,13 @@ func InitialModel(apps []models.Application) ArTUIModel {
 	}
 
 	appList := list.New(appsListModel, list.NewDefaultDelegate(), 0, 25)
-	//appList.Title = "ArgoCD Applications on <cluster>"
-	appList.SetShowTitle(false)
+	appList.Title = "App List"
+	appList.SetShowTitle(true)
 	appList.SetShowPagination(true)
-	appList.SetShowHelp(false)
-	appList.SetShowStatusBar(false)
+	//appList.SetShowHelp(false)
+	appList.SetShowStatusBar(true)
+	appList.SetShowFilter(true)
+	appList.SetFilteringEnabled(true)
 
 	return ArTUIModel{
 		Ready:        false,
@@ -67,18 +69,21 @@ func (m ArTUIModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.KeyMsg:
 		switch msg.String() {
+		case "f":
+			log.Printf("got key '%s' : show filter?", msg.String())
+			m.List.SetShowFilter(true)
+			m.List.FilterInput.Focus()
+			return m, nil
+
 		case "q", "esc", "ctrl+c":
 			return m, tea.Quit
+
 		case "tab", "n":
-			log.Printf("cursor() = %d, len(VisibleItems) = %d", m.List.Cursor(), len(m.List.VisibleItems()))
-			if m.List.Cursor() == len(m.List.VisibleItems())-1 {
-				m.List.Select(0)
-			} else {
-				m.List.CursorDown()
-			}
+			log.Printf("got key '%s' : m.List.CursorDown()", msg.String())
+			m.List.CursorDown()
+			// find and update content view
 			for _, v := range m.Applications {
 				if v.Name == m.List.SelectedItem().FilterValue() {
-					//content := fmt.Sprintf("# %s\n\n```yaml\n%s\n```\n\n", v.Name, v.LongStatus)
 					buf := new(bytes.Buffer)
 					tpl.Execute(buf, v)
 					content, err := glamour.Render(buf.String(), "dark")
@@ -94,12 +99,10 @@ func (m ArTUIModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			return m, nil
 		case "shift+tab", "p":
-			log.Printf("cursor() = %d, len(VisibleItems) = %d", m.List.Cursor(), len(m.List.VisibleItems()))
-			if m.List.Cursor() == 0 {
-				m.List.Select(len(m.List.VisibleItems()) - 1)
-			} else {
-				m.List.CursorUp()
-			}
+			log.Printf("got key '%s' : m.List.CursorUp()", msg.String())
+			m.List.CursorUp()
+
+			// find and update content view
 			for _, v := range m.Applications {
 				if v.Name == m.List.SelectedItem().FilterValue() {
 					buf := new(bytes.Buffer)
@@ -133,6 +136,7 @@ func (m ArTUIModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 			m.Viewport.HighPerformanceRendering = true
 			m.Viewport = viewport.New(msg.Width, msg.Height-verticalMarginHeight-1)
 			m.Viewport.YPosition = headerHeight
+			m.List.SetHeight(msg.Height - verticalMarginHeight - 1)
 			// m.Viewport.Style.Border(lipgloss.ThickBorder())
 			// m.Viewport.Style.BorderForeground(lipgloss.Color("198"))
 			for _, v := range m.Applications {
@@ -161,6 +165,7 @@ func (m ArTUIModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 		} else {
 			m.Viewport.Width = msg.Width - m.List.Width()
 			m.Viewport.Height = msg.Height - verticalMarginHeight - 1
+			m.List.SetHeight(msg.Height - verticalMarginHeight - 1)
 			for _, v := range m.Applications {
 				if v.Name == m.List.SelectedItem().FilterValue() {
 					content := fmt.Sprintf("# %s\n\n```yaml\n%s\n```\n\n", v.Name, v.LongStatus)
