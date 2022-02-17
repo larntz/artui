@@ -7,6 +7,9 @@ import (
 	"strings"
 	"text/template"
 
+	"gopkg.in/yaml.v2"
+
+	"github.com/argoproj/argo-cd/v2/pkg/apis/application/v1alpha1"
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/textinput"
 	"github.com/charmbracelet/bubbles/viewport"
@@ -31,17 +34,27 @@ const (
 type ArTUIModel struct {
 	Ready        bool
 	Activity     mode
-	Applications []models.Application
+	Applications v1alpha1.ApplicationList
 	List         list.Model
 	Viewport     viewport.Model
 	Textinput    textinput.Model
+	Glamour      *glamour.TermRenderer
 }
 
 // InitialModel creates the initial model struct
-func InitialModel(apps []models.Application) ArTUIModel {
+func InitialModel(apps v1alpha1.ApplicationList) ArTUIModel {
 	var appsListModel []list.Item
-	for _, v := range apps {
-		appsListModel = append(appsListModel, v)
+	for _, item := range apps.Items {
+		longStatus, err := yaml.Marshal(item.Status)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		appsListModel = append(appsListModel, models.Application{
+			Name:       item.Name,
+			Status:     string(item.Status.Health.Status) + "/" + string(item.Status.Sync.Status),
+			LongStatus: string(longStatus),
+		})
 	}
 
 	appList := list.New(appsListModel, list.NewDefaultDelegate(), 0, 0)
@@ -49,8 +62,6 @@ func InitialModel(apps []models.Application) ArTUIModel {
 	appList.SetShowTitle(true)
 	appList.SetShowPagination(true)
 	appList.SetShowHelp(false)
-	// appList.SetShowStatusBar(true)
-	// appList.NewStatusMessage("got some apps")
 	appList.SetShowFilter(true)
 	appList.SetFilteringEnabled(true)
 
@@ -77,7 +88,6 @@ func (m ArTUIModel) Init() tea.Cmd {
 
 // Update the app model
 func (m ArTUIModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
-	log.Printf("message.(type)=%t, message=%+v", message, message)
 	var (
 		cmd  tea.Cmd
 		cmds []tea.Cmd
@@ -108,7 +118,7 @@ func (m ArTUIModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 
 		// We handle errors just like any other message
 		case errMsg:
-			log.Printf("Error %s", msg.Error())
+			log.Printf("ERROR: %s", msg.Error())
 			return m, nil
 		}
 		m.Textinput, cmd = m.Textinput.Update(message)
@@ -119,7 +129,6 @@ func (m ArTUIModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case ":":
-			log.Printf("got key '%s' : Textinput", msg.String())
 			m.Textinput.Focus()
 			m.Textinput.Prompt = ":"
 			//m.Textinput.Update(m)
@@ -131,39 +140,39 @@ func (m ArTUIModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 
 		case "tab", "n":
-			log.Printf("got key '%s' : m.List.CursorDown()", msg.String())
 			m.List.CursorDown()
 			// find and update content view
-			for _, v := range m.Applications {
+			for _, v := range m.Applications.Items {
+				log.Printf("Searching for %s, got %s", m.List.SelectedItem().FilterValue(), v.Name)
 				if v.Name == m.List.SelectedItem().FilterValue() {
 					buf := new(bytes.Buffer)
 					tpl.Execute(buf, v)
-					content, err := glamour.Render(buf.String(), "dark")
+
+					content, err := m.Glamour.Render(buf.String())
 					if err != nil {
 						panic(err)
 					}
 					m.Viewport.SetContent(content)
-					m.Viewport.YOffset = 0
+					m.Viewport.YOffset = 1
 					break
 				}
 			}
 			return m, nil
 
 		case "shift+tab", "p":
-			log.Printf("got key '%s' : m.List.CursorUp()", msg.String())
 			m.List.CursorUp()
 
 			// find and update content view
-			for _, v := range m.Applications {
+			for _, v := range m.Applications.Items {
 				if v.Name == m.List.SelectedItem().FilterValue() {
 					buf := new(bytes.Buffer)
 					tpl.Execute(buf, v)
-					content, err := glamour.Render(buf.String(), "dark")
+					content, err := m.Glamour.Render(buf.String())
 					if err != nil {
 						panic(err)
 					}
 					m.Viewport.SetContent(content)
-					m.Viewport.YOffset = 0
+					m.Viewport.YOffset = 1
 					break
 				}
 			}
@@ -185,16 +194,25 @@ func (m ArTUIModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 
 			m.Viewport = viewport.New(msg.Width, msg.Height-verticalMarginHeight-1)
 			m.Viewport.YPosition = headerHeight + 1
+			m.Viewport.YOffset = 1
 			m.Viewport.KeyMap.Up.SetKeys("up")
 			m.Viewport.KeyMap.Down.SetKeys("down")
 			m.Viewport.MouseWheelEnabled = true
 
+			m.Glamour, err = glamour.NewTermRenderer(
+				glamour.WithAutoStyle(),
+				glamour.WithWordWrap(m.Viewport.Width-5))
+			if err != nil {
+				log.Panicf("glamour problem: %s", err.Error())
+			}
+      log.Printf("Re-wide glamour 1: m.Viewport.Width-5=%d",m.Viewport.Width-5)
+
 			m.List.SetHeight(msg.Height - verticalMarginHeight - 1)
-			for _, v := range m.Applications {
+			for _, v := range m.Applications.Items {
 				if v.Name == m.List.SelectedItem().FilterValue() {
 					buf := new(bytes.Buffer)
 					tpl.Execute(buf, v)
-					content, err := glamour.Render(buf.String(), "dark")
+					content, err := m.Glamour.Render(buf.String())
 					if err != nil {
 						panic(err)
 					}
@@ -203,7 +221,6 @@ func (m ArTUIModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 					break
 				}
 			}
-			log.Printf("m.Ready, msg.Width %d, viewport.Width %d, appList.Width %d", msg.Width, m.Viewport.Width, m.List.Width())
 
 			// This is only necessary for high performance rendering, which in
 			// most cases you won't need.
@@ -215,12 +232,20 @@ func (m ArTUIModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 			m.Viewport.Width = msg.Width - m.List.Width()
 			m.Viewport.Height = msg.Height - verticalMarginHeight - 1
 			m.List.SetHeight(msg.Height - verticalMarginHeight - 1)
-			for _, v := range m.Applications {
+
+			m.Glamour, err = glamour.NewTermRenderer(
+				glamour.WithAutoStyle(),
+				glamour.WithWordWrap(m.Viewport.Width-5))
+			if err != nil {
+				log.Panicf("glamour problem: %s", err.Error())
+			}
+			log.Printf("Re-wide glamour 2: m.Viewport.Width-5=%d",m.Viewport.Width-5")
+
+			for _, v := range m.Applications.Items {
 				if v.Name == m.List.SelectedItem().FilterValue() {
-					content := fmt.Sprintf("# %s\n\n```yaml\n%s\n```\n\n", v.Name, v.LongStatus)
 					buf := new(bytes.Buffer)
 					tpl.Execute(buf, v)
-					content, err := glamour.Render(buf.String(), "dark")
+					content, err := m.Glamour.Render(buf.String())
 					if err != nil {
 						panic(err)
 					}
@@ -230,7 +255,6 @@ func (m ArTUIModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 					break
 				}
 			}
-			log.Printf("m.Ready, msg.Width %d, viewport.Width %d, appList.Width %d", msg.Width, m.Viewport.Width, m.List.Width())
 		}
 	}
 
