@@ -205,7 +205,7 @@ func (m ArTUIModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 			if err != nil {
 				log.Panicf("glamour problem: %s", err.Error())
 			}
-      log.Printf("Re-wide glamour 1: m.Viewport.Width-5=%d",m.Viewport.Width-5)
+			log.Printf("Re-wide glamour 1: m.Viewport.Width-5=%d", m.Viewport.Width-5)
 
 			m.List.SetHeight(msg.Height - verticalMarginHeight - 1)
 			for _, v := range m.Applications.Items {
@@ -239,7 +239,7 @@ func (m ArTUIModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 			if err != nil {
 				log.Panicf("glamour problem: %s", err.Error())
 			}
-			log.Printf("Re-wide glamour 2: m.Viewport.Width-5=%d",m.Viewport.Width-5")
+			log.Printf("Re-wide glamour 2: m.Viewport.Width-5=%d", m.Viewport.Width-5)
 
 			for _, v := range m.Applications.Items {
 				if v.Name == m.List.SelectedItem().FilterValue() {
