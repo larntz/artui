@@ -22,10 +22,10 @@ var footerStyle = lipgloss.NewStyle().
 	Bold(true).
 	Foreground(lipgloss.Color("99")).
 	MarginRight(1).
-	MarginLeft(1).
-	PaddingLeft(4).Align(lipgloss.Right)
+	MarginLeft(1)
+	// PaddingLeft(4).Align(lipgloss.Right)
 
 var viewportStyle = lipgloss.NewStyle().PaddingLeft(3).
 	BorderStyle(lipgloss.NormalBorder()).BorderLeft(true).BorderForeground(lipgloss.Color("236"))
 
-var appListStyle = lipgloss.NewStyle().PaddingRight(3)
+var appListStyle = lipgloss.NewStyle().MarginRight(3).MarginLeft(2)

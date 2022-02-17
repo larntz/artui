@@ -2,11 +2,43 @@
 
 A program (eventually) for managing ArgoCD Applications.
 
+== Keybindings
+
+=== artui
+
+?             = help
+:             = command input
+
+Not sure if I need to login to argo for these
+
+:refresh      = refresh app
+:hard-refresh = hard refresh app
+:sync         = sync app
+:yaml         = show app raw yaml
+
+
+=== List
+
+filter = /
+up     = j
+down   = k
+
+=== Viewport
+
+top     = home
+bottom  = end
+pgup    = pgup
+up      = arrow
+pgdown  = pgdown
+down    = arrow
+
+
 == TODO
 
 === Priority
 
 * [ ] loading screen
+* [ ] keybindings
 * [ ] split modules so they can be updated separately and take focus
 * [ ] use argocd code to generate k8s code for working with argo custom resources
 * [ ] perform argo cd actions 
@@ -23,4 +55,13 @@ A program (eventually) for managing ArgoCD Applications.
 
 * [ ] theme
 * [ ] customize key bindings
+
+
+
+== References
+
+* https://pkg.go.dev/github.com/argoproj/argo-cd/v2@v2.2.5/pkg/apiclient/session
+* https://pkg.go.dev/github.com/argoproj/argo-cd/v2@v2.2.5/pkg/apis/application/v1alpha1
+* https://github.com/argoproj-labs/argocd-image-updater/blob/89daab684fcdac4c4d3a0683fe4764a9c1abd0b4/pkg/argocd/argocd.go[example of connecting to argocd]
+
 

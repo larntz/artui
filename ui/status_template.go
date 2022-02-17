@@ -1,7 +1,6 @@
 package ui
 
-const statusTemplate string = `
-# Application: {{ .Name }}
+const statusTemplate string = `# Application: {{ .Name }}
 
 ` + "```" + `yaml
 {{ .LongStatus }}

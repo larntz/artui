@@ -45,6 +45,7 @@ func GetApplications(kubeconfig string) []models.Application {
 	}
 	log.Printf("There are %d apps in the cluster\n", len(appResources.Items))
 	for i := 0; i < len(appResources.Items); i++ {
+		log.Printf("%s", appResources.Items[i].GetName())
 		y, err := yaml.Marshal(appResources.Items[i].Object["status"].(map[string]interface{})["health"].(map[string]interface{})["status"])
 		if err != nil {
 			panic("yaml unmarshal failure")
@@ -54,7 +55,6 @@ func GetApplications(kubeconfig string) []models.Application {
 			panic("yaml unmarshal failure")
 		}
 
-		log.Printf("%s", appResources.Items[i].GetName())
 		apps = append(apps, models.Application{
 			Name:       appResources.Items[i].GetName(),
 			Status:     string(y),
