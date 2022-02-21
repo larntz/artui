@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"log"
+	"reflect"
 	"strings"
 	"text/template"
 
@@ -88,6 +89,7 @@ func (m ArTUIModel) Init() tea.Cmd {
 
 // Update the app model
 func (m ArTUIModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
+	log.Printf("message type = %s, message = %s", reflect.TypeOf(message), message)
 	var (
 		cmd  tea.Cmd
 		cmds []tea.Cmd
@@ -192,6 +194,7 @@ func (m ArTUIModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 			// quickly, though asynchronously, which is why we wait for them
 			// here.
 
+			log.Printf("Got WindowSizeMsg, !m.Ready")
 			m.Viewport = viewport.New(msg.Width, msg.Height-verticalMarginHeight-1)
 			m.Viewport.YPosition = headerHeight + 1
 			m.Viewport.YOffset = 1
@@ -229,6 +232,7 @@ func (m ArTUIModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 			m.Viewport.YPosition = headerHeight + 1
 			m.Ready = true
 		} else {
+			log.Printf("Got WindowSizeMsg, m.Ready")
 			m.Viewport.Width = msg.Width - m.List.Width()
 			m.Viewport.Height = msg.Height - verticalMarginHeight - 1
 			m.List.SetHeight(msg.Height - verticalMarginHeight - 1)
