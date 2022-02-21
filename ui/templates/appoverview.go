@@ -15,6 +15,4 @@ const AppOverviewTemplate string = `# Application: {{ .Name }}
 {{- range $res := .Status.Resources }}
 | {{$res.Name}} | {{$res.Kind}} | {{$res.Status}} | {{ if not $res.Health }}✓{{else}}{{$res.Health.Status}}{{end}} | 
 {{- end }}
-
-
 `
