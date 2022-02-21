@@ -62,6 +62,7 @@ down    = arrow
 
 * https://pkg.go.dev/github.com/argoproj/argo-cd/v2@v2.2.5/pkg/apiclient/session
 * https://pkg.go.dev/github.com/argoproj/argo-cd/v2@v2.2.5/pkg/apis/application/v1alpha1
+* https://github.com/argoproj-labs/argocd-image-updater/blob/89daab684fcdac4c4d3a0683fe4764a9c1abd0b4/go.mod[go.mod replace examples^]
 * https://github.com/argoproj-labs/argocd-image-updater/blob/89daab684fcdac4c4d3a0683fe4764a9c1abd0b4/pkg/argocd/argocd.go[example of connecting to argocd]
 
 

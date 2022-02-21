@@ -2,7 +2,8 @@ package ui
 
 import "github.com/charmbracelet/lipgloss"
 
-var headerStyle = lipgloss.NewStyle().
+// HeaderStyle sets the style of our header
+var HeaderStyle = lipgloss.NewStyle().
 	BorderStyle(lipgloss.ThickBorder()).
 	BorderBottom(true).
 	BorderTop(false).BorderRight(false).BorderLeft(false).
@@ -14,7 +15,8 @@ var headerStyle = lipgloss.NewStyle().
 	PaddingTop(1).
 	PaddingLeft(4)
 
-var footerStyle = lipgloss.NewStyle().
+// FooterStyle sets the style of our footer
+var FooterStyle = lipgloss.NewStyle().
 	BorderStyle(lipgloss.ThickBorder()).
 	BorderTop(true).
 	BorderRight(false).BorderLeft(false).BorderBottom(false).
@@ -25,7 +27,9 @@ var footerStyle = lipgloss.NewStyle().
 	MarginLeft(1)
 	// PaddingLeft(4).Align(lipgloss.Right)
 
-var viewportStyle = lipgloss.NewStyle().PaddingLeft(3).
+// ViewportStyle sets the style of the viewport
+var ViewportStyle = lipgloss.NewStyle().PaddingLeft(3).
 	BorderStyle(lipgloss.NormalBorder()).BorderLeft(true).BorderForeground(lipgloss.Color("236"))
 
-var appListStyle = lipgloss.NewStyle().MarginRight(3).MarginLeft(2)
+// AppListStyle sets the style of our applicatino list
+var AppListStyle = lipgloss.NewStyle().MarginRight(3).MarginLeft(2)

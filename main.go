@@ -7,12 +7,12 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 
-	"github.com/larntz/artui/k8s"
+	"github.com/larntz/artui/argo"
 	"github.com/larntz/artui/ui"
 )
 
 func main() {
-	// setup loggin
+	// setup logging
 	f, err := tea.LogToFile("debug.log", "debug")
 	if err != nil {
 		fmt.Println("fatal:", err)
@@ -20,12 +20,15 @@ func main() {
 	}
 	defer f.Close()
 	log.Println("Application Start")
-	apps := k8s.GetApplications("/home/larntz/.kube/config")
+	apps := argo.GetApplications()
+
+	log.Println("Got Applications")
 
 	// start application
-	p := tea.NewProgram(ui.InitialModel(apps), tea.WithAltScreen(), tea.WithMouseCellMotion())
+	log.Println("UI Start")
+	p := tea.NewProgram(ui.InitializeModel(apps), tea.WithAltScreen(), tea.WithMouseCellMotion())
 	if err := p.Start(); err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 	log.Println("Application Exit")
 }

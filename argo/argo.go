@@ -2,14 +2,15 @@ package argo
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/argoproj/argo-cd/v2/pkg/apiclient"
 	"github.com/argoproj/argo-cd/v2/pkg/apiclient/application"
 	"github.com/argoproj/argo-cd/v2/pkg/apiclient/session"
+	"github.com/argoproj/argo-cd/v2/pkg/apis/application/v1alpha1"
 )
 
-func main() {
+// GetApps gets apps...
+func GetApplications() v1alpha1.ApplicationList {
 	clientOptions := apiclient.ClientOptions{
 		ServerAddr:           "argocd.192.168.200.240.nip.io",
 		Insecure:             true,
@@ -19,11 +20,8 @@ func main() {
 		PortForwardNamespace: "argocd",
 	}
 	argoClient := apiclient.NewClientOrDie(&clientOptions)
-	fmt.Printf("%+v\n\n", argoClient)
-
 	sessionCloser, sessionClient := argoClient.NewSessionClientOrDie()
 	defer sessionCloser.Close()
-	fmt.Printf("%+v\n\n", sessionClient)
 
 	sessionRequest := session.SessionCreateRequest{
 		Username: "admin",
@@ -36,8 +34,6 @@ func main() {
 		panic(err)
 	}
 
-	fmt.Printf("token: %s\n\n", session.Token)
-
 	clientOptions.AuthToken = session.Token
 	argoClient = apiclient.NewClientOrDie(&clientOptions)
 
@@ -47,8 +43,5 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-
-	for _, a := range apps.Items {
-		fmt.Printf("%s\n\n", a.GetFinalizers())
-	}
+	return *apps
 }
