@@ -1,6 +1,8 @@
-package ui
+package templates
 
-const statusTemplate string = `# Application: {{ .Name }}
+// AppOverviewTemplate is the markdown template used to
+// display Application overview.
+const AppOverviewTemplate string = `# Application: {{ .Name }}
 
 **Git Repository:** 
 
