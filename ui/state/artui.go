@@ -70,10 +70,9 @@ func (m ArTUIModel) footerView() string {
 
 // Update Viewport Content
 func (m ArTUIModel) renderTemplate(templateName string) (string, error) {
+	log.Printf("renderTemplate: currently selected item = %d", m.List.Index())
 	app := getApplication(m)
-
 	buf := new(bytes.Buffer)
-	log.Printf("len(Templates()) == %d", len(m.Templates.Templates()))
 	err := m.Templates.ExecuteTemplate(buf, templateName, app)
 	if err != nil {
 		log.Panicf("templateRender failed\n:%s", err.Error())
