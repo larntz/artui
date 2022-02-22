@@ -7,11 +7,12 @@ import (
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/textinput"
 
+	"github.com/larntz/artui/ui/keys"
 	"github.com/larntz/artui/ui/state"
 	"github.com/larntz/artui/ui/templates"
 )
 
-// InitialModel creates the initial model struct
+// InitializeModel creates the initial model struct
 func InitializeModel(apps v1alpha1.ApplicationList) state.ArTUIModel {
 
 	// Initialize Application List
@@ -66,6 +67,7 @@ func initAppList(apps v1alpha1.ApplicationList) list.Model {
 	}
 	appList := list.New(appsListModel, list.NewDefaultDelegate(), 0, 0)
 	appList.Title = "App List"
+	appList.KeyMap = keys.AppListKeyBinding
 	appList.SetShowTitle(true)
 	appList.SetShowPagination(true)
 	appList.SetShowHelp(false)

@@ -26,7 +26,7 @@ func main() {
 
 	// start application
 	log.Println("UI Start")
-	p := tea.NewProgram(ui.InitializeModel(apps), tea.WithAltScreen(), tea.WithMouseCellMotion())
+	p := tea.NewProgram(ui.InitializeModel(apps), tea.WithAltScreen(), tea.WithMouseAllMotion()) // tea.WithMouseCellMotion(),
 	if err := p.Start(); err != nil {
 		panic(err)
 	}

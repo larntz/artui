@@ -6,41 +6,42 @@ A program (eventually) for managing ArgoCD Applications.
 
 === artui
 
-?             = help
-:             = command input
+* ?             = help
+* :             = command input
 
 Not sure if I need to login to argo for these
 
-:refresh      = refresh app
-:hard-refresh = hard refresh app
-:sync         = sync app
-:yaml         = show app raw yaml
+* :refresh      = refresh app
+* :hard-refresh = hard refresh app
+* :sync         = sync app
+* :yaml         = show app raw yaml
 
 
 === List
 
-filter = /
-up     = j
-down   = k
+* filter = /
+* up     = j
+* down   = k
 
 === Viewport
 
-top     = home
-bottom  = end
-pgup    = pgup
-up      = arrow
-pgdown  = pgdown
-down    = arrow
+* top     = home
+* bottom  = end
+* pgup    = pgup
+* up      = arrow
+* pgdown  = pgdown
+* down    = arrow
 
 
 == TODO
 
 === Priority
 
+* [ ] application configuration (file and/or flags)
 * [ ] loading screen
-* [ ] keybindings
-* [ ] split modules so they can be updated separately and take focus
-* [ ] use argocd code to generate k8s code for working with argo custom resources
+* [x] keybindings
+* [x] split modules so they can be updated separately and take focus
+* [x] use argocd code to generate k8s code for working with argo custom resources
 * [ ] perform argo cd actions 
   * [ ] refresh
   * [ ] hard refresh

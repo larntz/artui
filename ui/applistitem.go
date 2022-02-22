@@ -1,5 +1,6 @@
 package ui
 
+// Used as bubbletea list.Items
 type appListItem struct {
 	name        string
 	description string
