@@ -12,12 +12,12 @@ import (
 // GetApps gets apps...
 func GetApplications() v1alpha1.ApplicationList {
 	clientOptions := apiclient.ClientOptions{
-		ServerAddr:  "argocd.192.168.200.240.nip.io",
-		Insecure:    true,
-		PlainText:   true,
-		UserAgent:   "ArTUI 0.0.1",
-		PortForward: false,
-		// PortForwardNamespace: "argocd",
+		ServerAddr:           "argocd.192.168.200.240.nip.io",
+		Insecure:             true,
+		PlainText:            true,
+		UserAgent:            "ArTUI 0.0.1",
+		PortForward:          true,
+		PortForwardNamespace: "argocd",
 	}
 	argoClient := apiclient.NewClientOrDie(&clientOptions)
 	sessionCloser, sessionClient := argoClient.NewSessionClientOrDie()
