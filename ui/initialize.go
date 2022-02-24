@@ -3,17 +3,23 @@ package ui
 import (
 	"text/template"
 
+	"github.com/argoproj/argo-cd/v2/pkg/apiclient"
+	"github.com/argoproj/argo-cd/v2/pkg/apiclient/session"
 	"github.com/argoproj/argo-cd/v2/pkg/apis/application/v1alpha1"
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/textinput"
 
+	"github.com/larntz/artui/argo"
 	"github.com/larntz/artui/ui/keys"
 	"github.com/larntz/artui/ui/state"
 	"github.com/larntz/artui/ui/templates"
 )
 
 // InitializeModel creates the initial model struct
-func InitializeModel(apps v1alpha1.ApplicationList) state.ArTUIModel {
+func InitializeModel(sessionRequest session.SessionCreateRequest, apiClient apiclient.ClientOptions) state.ArTUIModel {
+
+	//var apps v1alpha1.ApplicationList
+	apps := argo.GetApplications(sessionRequest, apiClient)
 
 	// Initialize Application List
 	appList := initAppList(apps)
