@@ -9,24 +9,13 @@ import (
 	"github.com/argoproj/argo-cd/v2/pkg/apis/application/v1alpha1"
 )
 
-// GetApps gets apps...
-func GetApplications() v1alpha1.ApplicationList {
-	clientOptions := apiclient.ClientOptions{
-		ServerAddr:           "argocd.192.168.200.240.nip.io",
-		Insecure:             true,
-		PlainText:            true,
-		UserAgent:            "ArTUI 0.0.1",
-		PortForward:          true,
-		PortForwardNamespace: "argocd",
-	}
+// GetApplications gets argocd apps...
+func GetApplications(sessionRequest session.SessionCreateRequest, clientOptions apiclient.ClientOptions) v1alpha1.ApplicationList {
+
 	argoClient := apiclient.NewClientOrDie(&clientOptions)
 	sessionCloser, sessionClient := argoClient.NewSessionClientOrDie()
 	defer sessionCloser.Close()
 
-	sessionRequest := session.SessionCreateRequest{
-		Username: "admin",
-		Password: "admin123",
-	}
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	session, err := sessionClient.Create(ctx, &sessionRequest)

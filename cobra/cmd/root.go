@@ -6,15 +6,30 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/argoproj/argo-cd/v2/pkg/apiclient"
+	"github.com/argoproj/argo-cd/v2/pkg/apiclient/session"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/larntz/artui/argo"
 	"github.com/larntz/artui/ui"
 )
 
 var cfgFile string
+
+var argocdClientOptions = apiclient.ClientOptions{
+	ServerAddr:           "",
+	Insecure:             false,
+	PlainText:            false,
+	UserAgent:            "ArTUI 0.0.1",
+	PortForward:          true,
+	PortForwardNamespace: "",
+}
+
+var sessionRequest = session.SessionCreateRequest{
+	Username: "",
+	Password: "",
+}
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -39,9 +54,6 @@ func Execute() {
 		os.Exit(1)
 	}
 
-	fmt.Println("goodbye for now")
-	os.Exit(0)
-
 	// setup logging
 	f, err := tea.LogToFile("debug.log", "debug")
 	if err != nil {
@@ -50,13 +62,13 @@ func Execute() {
 	}
 	defer f.Close()
 	log.Println("Application Start")
-	apps := argo.GetApplications()
+	// apps := argo.GetApplications()
 
 	log.Println("Got Applications")
 
 	// start application
 	log.Println("UI Start")
-	p := tea.NewProgram(ui.InitializeModel(apps), tea.WithAltScreen(), tea.WithMouseAllMotion()) // tea.WithMouseCellMotion(),
+	p := tea.NewProgram(ui.InitializeModel(sessionRequest, argocdClientOptions), tea.WithAltScreen(), tea.WithMouseAllMotion()) // tea.WithMouseCellMotion(),
 	if err := p.Start(); err != nil {
 		panic(err)
 	}
@@ -94,17 +106,49 @@ func initConfig() {
 		viper.SetConfigName("config.yaml")
 	}
 
-	viper.SetEnvPrefix("X_ARTUI")
+	viper.SetEnvPrefix("ARTUI")
 	viper.AutomaticEnv() // read in environment variables that match
 
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err == nil {
 		fmt.Fprintln(os.Stderr, "Using config file:", viper.ConfigFileUsed())
-		host := viper.Get("argocd.host")
-		user := viper.Get("argocd.username")
-		ns := viper.Get("argocd.namespace")
-		fmt.Fprintf(os.Stderr, "host = %s\n", host)
-		fmt.Fprintf(os.Stderr, "username = %s\n", user)
-		fmt.Fprintf(os.Stderr, "namespace = %s\n", ns)
+
+		if host := viper.GetString("argocd.host"); host == "" {
+			fmt.Println("Unable to get argocd host configuration.")
+			os.Exit(1)
+		} else {
+			argocdClientOptions.ServerAddr = host
+		}
+
+		if ns := viper.GetString("argocd.namespace"); ns == "" {
+			fmt.Println("Unable to get argocd ns configuration.")
+			os.Exit(1)
+		} else {
+			argocdClientOptions.PortForwardNamespace = ns
+		}
+
+		argocdClientOptions.Insecure = viper.GetBool("argocd.insecure")
+		argocdClientOptions.PlainText = viper.GetBool("argocd.plaintext")
+
+		if user := viper.GetString("argocd.username"); user == "" {
+			fmt.Println("Unable to get argocd user configuration.")
+			os.Exit(1)
+		} else {
+			sessionRequest.Username = user
+		}
+
+		if user := viper.GetString("argocd.username"); user == "" {
+			fmt.Println("Unable to get argocd user configuration.")
+			os.Exit(1)
+		} else {
+			sessionRequest.Username = user
+		}
+
+		if password := viper.GetString("password"); password == "" {
+			fmt.Println("Unable to get password. Did you set the env variable ARTUI_PASSWORD?")
+			os.Exit(1)
+		} else {
+			sessionRequest.Password = password
+		}
 	}
 }
