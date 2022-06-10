@@ -9,6 +9,8 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/glamour"
 	"github.com/charmbracelet/lipgloss"
+
+	"github.com/larntz/artui/argo"
 )
 
 // Find correct application
@@ -36,6 +38,11 @@ func inputUpdate(m ArTUIModel, message tea.Msg) (tea.Model, tea.Cmd) {
 			switch m.Textinput.Value() {
 			case "q", "quit":
 				return m, tea.Quit
+
+			case "r", "refresh-applications":
+				log.Printf("User wants to refresh application list")
+				m.Applications = argo.GetApplications(m.ArgoSessionRequest, m.APIClient)
+				return m, nil
 			}
 			return m, nil
 		}

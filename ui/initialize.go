@@ -31,12 +31,14 @@ func InitializeModel(sessionRequest session.SessionCreateRequest, apiClient apic
 	tpl := initTemplates()
 
 	return state.ArTUIModel{
-		Ready:        false,
-		Activity:     state.View,
-		List:         appList,
-		Applications: apps,
-		Textinput:    ti,
-		Templates:    tpl,
+		ArgoSessionRequest: sessionRequest,
+		APIClient:          apiClient,
+		Ready:              false,
+		Activity:           state.View,
+		List:               appList,
+		Applications:       apps,
+		Textinput:          ti,
+		Templates:          tpl,
 	}
 }
 

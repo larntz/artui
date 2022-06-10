@@ -7,6 +7,8 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/argoproj/argo-cd/v2/pkg/apiclient"
+	"github.com/argoproj/argo-cd/v2/pkg/apiclient/session"
 	"github.com/argoproj/argo-cd/v2/pkg/apis/application/v1alpha1"
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/textinput"
@@ -31,14 +33,16 @@ const (
 
 // ArTUIModel is the bubbletea app model
 type ArTUIModel struct {
-	Ready        bool
-	Activity     mode
-	Applications v1alpha1.ApplicationList
-	List         list.Model
-	Viewport     viewport.Model
-	Textinput    textinput.Model
-	Glamour      *glamour.TermRenderer
-	Templates    *template.Template
+	APIClient          apiclient.ClientOptions
+	ArgoSessionRequest session.SessionCreateRequest
+	Ready              bool
+	Activity           mode
+	Applications       v1alpha1.ApplicationList
+	List               list.Model
+	Viewport           viewport.Model
+	Textinput          textinput.Model
+	Glamour            *glamour.TermRenderer
+	Templates          *template.Template
 }
 
 // Init the app model
