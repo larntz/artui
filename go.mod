@@ -3,7 +3,7 @@ module github.com/larntz/artui
 go 1.17
 
 require (
-	github.com/argoproj/argo-cd/v2 v2.2.5
+	github.com/argoproj/argo-cd/v2 v2.2.9
 	github.com/charmbracelet/bubbles v0.10.2
 	github.com/charmbracelet/bubbletea v0.19.3
 	github.com/charmbracelet/glamour v0.5.0
@@ -19,7 +19,7 @@ require (
 	github.com/PuerkitoBio/purell v1.1.1 // indirect
 	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect
 	github.com/alecthomas/chroma v0.10.0 // indirect
-	github.com/argoproj/gitops-engine v0.5.2 // indirect
+	github.com/argoproj/gitops-engine v0.5.5 // indirect
 	github.com/argoproj/pkg v0.11.1-0.20211203175135-36c59d8fafe0 // indirect
 	github.com/atotto/clipboard v0.1.4 // indirect
 	github.com/aymerick/douceur v0.2.0 // indirect
