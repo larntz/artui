@@ -10,6 +10,7 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 
 	"github.com/larntz/artui/argo"
+	"github.com/larntz/artui/models"
 	"github.com/larntz/artui/ui/keys"
 	"github.com/larntz/artui/ui/state"
 	"github.com/larntz/artui/ui/templates"
@@ -68,9 +69,9 @@ func initTemplates() *template.Template {
 func initAppList(apps v1alpha1.ApplicationList) list.Model {
 	var appsListModel []list.Item
 	for _, item := range apps.Items {
-		appsListModel = append(appsListModel, appListItem{
-			name:        item.Name,
-			description: string(item.Status.Health.Status) + "/" + string(item.Status.Sync.Status),
+		appsListModel = append(appsListModel, models.AppListItem{
+			Name:            item.Name,
+			ItemDescription: string(item.Status.Health.Status) + "/" + string(item.Status.Sync.Status),
 		})
 	}
 	appList := list.New(appsListModel, list.NewDefaultDelegate(), 0, 0)

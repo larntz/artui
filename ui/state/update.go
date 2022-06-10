@@ -5,12 +5,15 @@ import (
 	"reflect"
 
 	"github.com/argoproj/argo-cd/v2/pkg/apis/application/v1alpha1"
+	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/glamour"
 	"github.com/charmbracelet/lipgloss"
 
 	"github.com/larntz/artui/argo"
+	"github.com/larntz/artui/models"
+	"github.com/larntz/artui/ui/keys"
 )
 
 // Find correct application
@@ -42,6 +45,7 @@ func inputUpdate(m ArTUIModel, message tea.Msg) (tea.Model, tea.Cmd) {
 			case "r", "refresh-applications":
 				log.Printf("User wants to refresh application list")
 				m.Applications = argo.GetApplications(m.ArgoSessionRequest, m.APIClient)
+				m.List = updateAppList(m.Applications)
 				return m, nil
 			}
 			return m, nil
@@ -198,4 +202,24 @@ func (m ArTUIModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 		cmds = append(cmds, cmd)
 	}
 	return m, tea.Batch(cmds...)
+}
+
+func updateAppList(apps v1alpha1.ApplicationList) list.Model {
+	var appsListModel []list.Item
+	for _, item := range apps.Items {
+		appsListModel = append(appsListModel, models.AppListItem{
+			Name:            item.Name,
+			ItemDescription: string(item.Status.Health.Status) + "/" + string(item.Status.Sync.Status),
+		})
+	}
+	appList := list.New(appsListModel, list.NewDefaultDelegate(), 0, 0)
+	appList.Title = "App List"
+	appList.KeyMap = keys.AppListKeyBinding
+	appList.SetShowTitle(true)
+	appList.SetShowPagination(true)
+	appList.SetShowHelp(false)
+	appList.SetShowFilter(true)
+	appList.SetFilteringEnabled(true)
+
+	return appList
 }
