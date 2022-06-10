@@ -18,9 +18,9 @@ import (
 var cfgFile string
 
 var argocdClientOptions = apiclient.ClientOptions{
-	ServerAddr:           "",
+	ServerAddr:           "port-forward",
 	Insecure:             false,
-	PlainText:            false,
+	PlainText:            true,
 	UserAgent:            "ArTUI 0.0.1",
 	PortForward:          true,
 	PortForwardNamespace: "",
@@ -115,7 +115,7 @@ func initConfig() {
 
 		if host := viper.GetString("argocd.host"); host == "" {
 			fmt.Println("Unable to get argocd host configuration.")
-			os.Exit(1)
+			// os.Exit(1)
 		} else {
 			argocdClientOptions.ServerAddr = host
 		}
@@ -127,6 +127,7 @@ func initConfig() {
 			argocdClientOptions.PortForwardNamespace = ns
 		}
 
+		argocdClientOptions.PortForward = viper.GetBool("argocd.port-forward")
 		argocdClientOptions.Insecure = viper.GetBool("argocd.insecure")
 		argocdClientOptions.PlainText = viper.GetBool("argocd.plaintext")
 
