@@ -1,5 +1,66 @@
 = ArTUI
 
+== Dependencies
+
+To setup dependencies use the replace() block from the https://github.com/argoproj/argo-cd/blob/master/go.mod[argocd project `go.mod`] file. Then run `go mod tidy -compat=1.1.7`.
+
+== Keybindings
+
+=== artui
+
+* ?             = help
+* :             = command input
+
+Not sure if I need to login to argo for these
+
+* :refresh      = refresh app
+* :hard-refresh = hard refresh app
+* :sync         = sync app
+* :yaml         = show app raw yaml
+
+
+=== List
+
+* filter = /
+* up     = j
+* down   = k
+
+=== Viewport
+
+* top     = home
+* bottom  = end
+* pgup    = pgup
+* up      = arrow
+* pgdown  = pgdown
+* down    = arrow
+
+
+== TODO
+
+=== Priority
+
+* [ ] application configuration (file and/or flags)
+* [ ] loading screen
+* [x] keybindings
+* [x] split modules so they can be updated separately and take focus
+* [x] use argocd code to generate k8s code for working with argo custom resources
+* [ ] perform argo cd actions 
+  * [ ] refresh
+  * [ ] hard refresh
+  * [ ] sync
+  * [ ] remove finalizers, delete app, etc. 
+  * [ ] manage ssh keys
+  * [ ] manage gpg keys
+  * [ ] manage repos
+* [ ] view application metrics (based on resources in application object)
+
+=== Someday 
+
+* [ ] theme
+* [ ] customize key bindings
+
+== Stupid Art
+
  $$$$$$\         $$$$$$$$\ $$\   $$\ $$$$$$\ 
 $$  __$$\        \__$$  __|$$ |  $$ |\_$$  _|
 $$ /  $$ | $$$$$$\  $$ |   $$ |  $$ |  $$ |  
@@ -132,62 +193,6 @@ d88P     888 888     888      "Y88888P"  8888888
 ╚» ★ ArTUI - Managing ArgoCD ★ «╝
 
 A program (eventually) for managing ArgoCD Applications.
-
-== Keybindings
-
-=== artui
-
-* ?             = help
-* :             = command input
-
-Not sure if I need to login to argo for these
-
-* :refresh      = refresh app
-* :hard-refresh = hard refresh app
-* :sync         = sync app
-* :yaml         = show app raw yaml
-
-
-=== List
-
-* filter = /
-* up     = j
-* down   = k
-
-=== Viewport
-
-* top     = home
-* bottom  = end
-* pgup    = pgup
-* up      = arrow
-* pgdown  = pgdown
-* down    = arrow
-
-
-== TODO
-
-=== Priority
-
-* [ ] application configuration (file and/or flags)
-* [ ] loading screen
-* [x] keybindings
-* [x] split modules so they can be updated separately and take focus
-* [x] use argocd code to generate k8s code for working with argo custom resources
-* [ ] perform argo cd actions 
-  * [ ] refresh
-  * [ ] hard refresh
-  * [ ] sync
-  * [ ] remove finalizers, delete app, etc. 
-  * [ ] manage ssh keys
-  * [ ] manage gpg keys
-  * [ ] manage repos
-* [ ] view application metrics (based on resources in application object)
-
-=== Someday 
-
-* [ ] theme
-* [ ] customize key bindings
-
 
 
 == References
