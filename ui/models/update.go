@@ -1,6 +1,7 @@
-package state
+package models
 
 import (
+	"errors"
 	"log"
 	"reflect"
 
@@ -11,25 +12,29 @@ import (
 	"github.com/charmbracelet/glamour"
 	"github.com/charmbracelet/lipgloss"
 
-	"github.com/larntz/artui/argo"
-	"github.com/larntz/artui/models"
 	"github.com/larntz/artui/ui/keys"
 )
 
 // Find correct application
-func getApplication(m ArTUIModel) v1alpha1.Application {
+func getApplication(m ArTUIModel) (v1alpha1.Application, error) {
+	log.Printf("getApplications: len(m.Applications.Items) = %d", len(m.Applications.Items))
+	if m.List.SelectedItem() != nil {
+		log.Printf("getApplication: SelectedItem = %v", m.List.SelectedItem().FilterValue())
+	}
 	for _, v := range m.Applications.Items {
+		log.Printf("getApplication: want=%s, got=%s", v.Name, m.List.SelectedItem().FilterValue())
 		if v.Name == m.List.SelectedItem().FilterValue() {
-			return v
+			return v, nil
 		}
 	}
-	log.Printf("failed to find application")
-	return v1alpha1.Application{}
+	log.Printf("getApplication: failed to find application")
+	return v1alpha1.Application{}, errors.New("failed-to-find-app")
 }
 
 // Handle updates during input
 func inputUpdate(m ArTUIModel, message tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := message.(type) {
+
 	case tea.KeyMsg:
 		switch msg.Type {
 		case tea.KeyEsc:
@@ -38,17 +43,26 @@ func inputUpdate(m ArTUIModel, message tea.Msg) (tea.Model, tea.Cmd) {
 			m.Activity = View
 			return m, nil
 		case tea.KeyEnter:
+
 			switch m.Textinput.Value() {
 			case "q", "quit":
+				m.Textinput.Prompt = " "
+				m.Textinput.Reset()
 				return m, tea.Quit
 
 			case "r", "refresh-applications":
-				log.Printf("User wants to refresh application list")
-				m.Applications = argo.GetApplications(m.ArgoSessionRequest, m.APIClient)
-				m.List = updateAppList(m.Applications)
+				log.Printf("User requested application refresh")
+				m.Textinput.Prompt = " "
+				m.Textinput.Reset()
+				m.Activity = View
+				return m, GetApplications(m)
+
+			default:
+				m.Textinput.Prompt = " "
+				m.Textinput.Reset()
+				m.Activity = View
 				return m, nil
 			}
-			return m, nil
 		}
 
 	// We handle errors just like any other message
@@ -149,6 +163,25 @@ func (m ArTUIModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 		return inputUpdate(m, message)
 	} else if m.Activity == View {
 		switch msg := message.(type) { // inner switch
+
+		case GetApplicationMsg:
+			log.Printf("GetApplicationMsg recieved. len(msg.applications) = %d", len(msg.applications.Items))
+			selected := m.List.Index()
+			m.Applications = msg.applications
+			m.List = m.updateAppList()
+			m.List.Select(selected)
+			m.List.Update(msg)
+			cmds = append(cmds, cmd)
+			markdown, err := m.renderTemplate("AppOverviewTemplate")
+			if err != nil {
+				log.Panicf("144: %s", err.Error())
+			}
+			m.Viewport.SetContent(markdown)
+			m.Viewport.YOffset = 1
+			m.Viewport, cmd = m.Viewport.Update(message)
+			cmds = append(cmds, cmd)
+			// return m, tea.Batch(cmds...)
+
 		case tea.KeyMsg:
 			switch msg.String() {
 			case ":":
@@ -204,15 +237,21 @@ func (m ArTUIModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-func updateAppList(apps v1alpha1.ApplicationList) list.Model {
-	var appsListModel []list.Item
-	for _, item := range apps.Items {
-		appsListModel = append(appsListModel, models.AppListItem{
-			Name:            item.Name,
-			ItemDescription: string(item.Status.Health.Status) + "/" + string(item.Status.Sync.Status),
+func (m ArTUIModel) updateAppList() list.Model {
+	log.Printf("updateAppList: got %d apps", len(m.Applications.Items))
+	var appListItems []list.Item
+	listWidth := 0
+	for _, app := range m.Applications.Items {
+		description := string(app.Status.Health.Status) + "/" + string(app.Status.Sync.Status)
+		if listWidth < len(description) {
+			listWidth = len(description) + 2
+		}
+		appListItems = append(appListItems, AppListItem{
+			Name:            app.Name,
+			ItemDescription: description,
 		})
 	}
-	appList := list.New(appsListModel, list.NewDefaultDelegate(), 0, 0)
+	appList := list.New(appListItems, list.NewDefaultDelegate(), 25, (len(appListItems)*3)+5)
 	appList.Title = "App List"
 	appList.KeyMap = keys.AppListKeyBinding
 	appList.SetShowTitle(true)
