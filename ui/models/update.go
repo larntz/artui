@@ -51,9 +51,7 @@ func inputUpdate(m ArTUIModel, message tea.Msg) (tea.Model, tea.Cmd) {
 				return m, tea.Quit
 
 			case "r", "refresh-applications":
-				log.Printf("User wants to refresh application list")
-				// m.Applications = argo.GetApplications(m.ArgoSessionRequest, m.APIClient)
-				// m.List = m.updateAppList()
+				log.Printf("User requested application refresh")
 				m.Textinput.Prompt = " "
 				m.Textinput.Reset()
 				m.Activity = View
@@ -168,9 +166,10 @@ func (m ArTUIModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 
 		case GetApplicationMsg:
 			log.Printf("GetApplicationMsg recieved. len(msg.applications) = %d", len(msg.applications.Items))
+			selected := m.List.Index()
 			m.Applications = msg.applications
 			m.List = m.updateAppList()
-			m.List.Select(0)
+			m.List.Select(selected)
 			m.List.Update(msg)
 			cmds = append(cmds, cmd)
 			markdown, err := m.renderTemplate("AppOverviewTemplate")
