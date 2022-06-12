@@ -1,4 +1,4 @@
-package state
+package models
 
 import (
 	"bytes"
@@ -47,7 +47,7 @@ type ArTUIModel struct {
 
 // Init the app model
 func (m ArTUIModel) Init() tea.Cmd {
-	return nil
+	return tea.Batch(GetApplications(m))
 }
 
 // View the model?
@@ -74,10 +74,15 @@ func (m ArTUIModel) footerView() string {
 
 // Update Viewport Content
 func (m ArTUIModel) renderTemplate(templateName string) (string, error) {
-	app := getApplication(m)
+	log.Printf("renderTemplate: %s", templateName)
+	app, err := getApplication(m)
+	if err != nil {
+		return m.Glamour.Render("")
+	}
+
 	buf := new(bytes.Buffer)
 	if err := m.Templates.ExecuteTemplate(buf, templateName, app); err != nil {
-		log.Panicf("templateRender failed\n:%s", err.Error())
+		log.Panicf("templateRender failed\n:\t%s", err.Error())
 	}
 	return m.Glamour.Render(buf.String())
 }

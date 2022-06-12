@@ -9,37 +9,26 @@ import (
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/textinput"
 
-	"github.com/larntz/artui/argo"
-	"github.com/larntz/artui/models"
 	"github.com/larntz/artui/ui/keys"
-	"github.com/larntz/artui/ui/state"
+	"github.com/larntz/artui/ui/models"
 	"github.com/larntz/artui/ui/templates"
 )
 
 // InitializeModel creates the initial model struct
-func InitializeModel(sessionRequest session.SessionCreateRequest, apiClient apiclient.ClientOptions) state.ArTUIModel {
+func InitializeModel(sessionRequest session.SessionCreateRequest, apiClient apiclient.ClientOptions) models.ArTUIModel {
+	appList := initAppList(v1alpha1.ApplicationList{})
+	textInput := initTextInput()
+	templates := initTemplates()
 
-	//var apps v1alpha1.ApplicationList
-	apps := argo.GetApplications(sessionRequest, apiClient)
-
-	// Initialize Application List
-	appList := initAppList(apps)
-
-	// Initialize TextInput
-	ti := initTextInput()
-
-	// Initialize Templates
-	tpl := initTemplates()
-
-	return state.ArTUIModel{
+	return models.ArTUIModel{
 		ArgoSessionRequest: sessionRequest,
 		APIClient:          apiClient,
 		Ready:              false,
-		Activity:           state.View,
+		Activity:           models.View,
 		List:               appList,
-		Applications:       apps,
-		Textinput:          ti,
-		Templates:          tpl,
+		Applications:       v1alpha1.ApplicationList{},
+		Textinput:          textInput,
+		Templates:          templates,
 	}
 }
 
@@ -74,8 +63,8 @@ func initAppList(apps v1alpha1.ApplicationList) list.Model {
 			ItemDescription: string(item.Status.Health.Status) + "/" + string(item.Status.Sync.Status),
 		})
 	}
-	appList := list.New(appsListModel, list.NewDefaultDelegate(), 0, 0)
-	appList.Title = "App List"
+	appList := list.New(appsListModel, list.NewDefaultDelegate(), 50, 15)
+	appList.Title = "Initializing"
 	appList.KeyMap = keys.AppListKeyBinding
 	appList.SetShowTitle(true)
 	appList.SetShowPagination(true)
