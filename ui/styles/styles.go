@@ -10,10 +10,7 @@ var HeaderStyle = lipgloss.NewStyle().
 	BorderForeground(lipgloss.Color("198")).
 	Bold(true).
 	Foreground(lipgloss.Color("99")).
-	MarginRight(1).
-	MarginLeft(1).
-	PaddingTop(1).
-	PaddingLeft(4)
+	MarginTop(1)
 
 // FooterStyle sets the style of our footer
 var FooterStyle = lipgloss.NewStyle().
@@ -22,14 +19,16 @@ var FooterStyle = lipgloss.NewStyle().
 	BorderRight(false).BorderLeft(false).BorderBottom(false).
 	BorderForeground(lipgloss.Color("198")).
 	Bold(true).
-	Foreground(lipgloss.Color("99")).
-	MarginRight(1).
-	MarginLeft(1)
-	// PaddingLeft(4).Align(lipgloss.Right)
+	Foreground(lipgloss.Color("99"))
 
 // ViewportStyle sets the style of the viewport
-var ViewportStyle = lipgloss.NewStyle().PaddingLeft(3).
-	BorderStyle(lipgloss.NormalBorder()).BorderLeft(true).BorderForeground(lipgloss.Color("236"))
+var ViewportStyle = lipgloss.NewStyle().
+	PaddingLeft(3).
+	BorderStyle(lipgloss.NormalBorder()).
+	BorderLeft(true).
+	BorderForeground(lipgloss.Color("236"))
 
-// AppListStyle sets the style of our applicatino list
-var AppListStyle = lipgloss.NewStyle().MarginRight(3).MarginLeft(2)
+// AppListStyle sets the style of our application list
+var AppListStyle = lipgloss.NewStyle().
+	MarginRight(2).
+	MarginLeft(0)

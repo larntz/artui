@@ -63,7 +63,7 @@ func initAppList(apps v1alpha1.ApplicationList) list.Model {
 			ItemDescription: string(item.Status.Health.Status) + "/" + string(item.Status.Sync.Status),
 		})
 	}
-	appList := list.New(appsListModel, list.NewDefaultDelegate(), 50, 15)
+	appList := list.New(appsListModel, list.NewDefaultDelegate(), 20, 10)
 	appList.Title = "Initializing"
 	appList.KeyMap = keys.AppListKeyBinding
 	appList.SetShowTitle(true)

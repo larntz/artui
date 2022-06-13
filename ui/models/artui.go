@@ -43,6 +43,8 @@ type ArTUIModel struct {
 	Textinput          textinput.Model
 	Glamour            *glamour.TermRenderer
 	Templates          *template.Template
+	WindowHeight       int
+	WindowWidth        int
 }
 
 // Init the app model
@@ -50,9 +52,9 @@ func (m ArTUIModel) Init() tea.Cmd {
 	return tea.Batch(GetApplications(m))
 }
 
-// View the model?
+// View the model
 func (m ArTUIModel) View() string {
-	return fmt.Sprintf("%s\n%s\n%s\n",
+	return lipgloss.JoinVertical(lipgloss.Left,
 		m.headerView(),
 		lipgloss.JoinHorizontal(lipgloss.Top, styles.AppListStyle.Render(m.List.View()), styles.ViewportStyle.Render(m.Viewport.View())),
 		m.footerView())
@@ -60,15 +62,17 @@ func (m ArTUIModel) View() string {
 
 func (m ArTUIModel) headerView() string {
 	title := fmt.Sprintf("ArTUI: Managing ArgoCD Apps")
-	line := strings.Repeat(" ", utils.Max(0, m.Viewport.Width-lipgloss.Width(styles.HeaderStyle.Render(title))))
+	line := strings.Repeat(" ", utils.Max(0, m.WindowWidth-lipgloss.Width(styles.HeaderStyle.Render(title))))
+
 	return styles.HeaderStyle.Render(lipgloss.JoinHorizontal(lipgloss.Center, title, line))
 }
 
 func (m ArTUIModel) footerView() string {
-	message := fmt.Sprintf("https://github.com/larntz/artui")
 	textInput := m.Textinput.View()
+	message := fmt.Sprintf("https://github.com/larntz/artui")
 	line := strings.Repeat(" ", utils.Max(0,
-		m.Viewport.Width-lipgloss.Width(styles.FooterStyle.Render(message))-lipgloss.Width(styles.FooterStyle.Render(textInput))))
+		m.WindowWidth-lipgloss.Width(styles.FooterStyle.Render(message))-lipgloss.Width(styles.FooterStyle.Render(textInput))))
+
 	return styles.FooterStyle.Render(lipgloss.JoinHorizontal(lipgloss.Center, textInput, line, message))
 }
 

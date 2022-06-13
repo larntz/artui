@@ -55,18 +55,22 @@ func Execute() {
 	}
 
 	// setup logging
-	f, err := tea.LogToFile("debug.log", "debug")
+	f, err := tea.LogToFile("/tmp/artui-debug.log", "debug")
 	if err != nil {
-		fmt.Println("fatal:", err)
+		fmt.Println("fatal: ", err)
 		os.Exit(1)
 	}
 	defer f.Close()
-	log.Println("Application Start")
-	// apps := argo.GetApplications()
 
-	log.Println("Got Applications")
+	stdErr, err := os.OpenFile("/tmp/artui-stderr.log", os.O_TRUNC|os.O_CREATE|os.O_WRONLY, 0664)
+	if err != nil {
+		fmt.Println("fatal: ", err)
+		os.Exit(1)
+	}
+	os.Stderr = stdErr
 
 	// start application
+	log.Println("Application Start")
 	log.Println("UI Start")
 	p := tea.NewProgram(ui.InitializeModel(sessionRequest, argocdClientOptions), tea.WithAltScreen(), tea.WithMouseAllMotion()) // tea.WithMouseCellMotion(),
 	if err := p.Start(); err != nil {

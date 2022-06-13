@@ -76,11 +76,20 @@ func inputUpdate(m ArTUIModel, message tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-// Handle WindowSizeMsg
-func handleWindowSizeMsg(m ArTUIModel, message tea.WindowSizeMsg) (tea.Model, tea.Cmd) {
+// Return windowHeight - (header + footer)
+func getContentHeight(m ArTUIModel) int {
 	headerHeight := lipgloss.Height(m.headerView())
 	footerHeight := lipgloss.Height(m.footerView())
-	verticalMarginHeight := headerHeight + footerHeight
+
+	return m.WindowHeight - (headerHeight + footerHeight + 1)
+}
+
+// Handle WindowSizeMsg
+func handleWindowSizeMsg(m ArTUIModel, message tea.WindowSizeMsg) (tea.Model, tea.Cmd) {
+	m.WindowHeight = message.Height
+	m.WindowWidth = message.Width
+	contentHeight := getContentHeight(m)
+
 	var cmd tea.Cmd
 	var cmds []tea.Cmd
 
@@ -91,16 +100,12 @@ func handleWindowSizeMsg(m ArTUIModel, message tea.WindowSizeMsg) (tea.Model, te
 		// quickly, though asynchronously, which is why we wait for them
 		// here.
 
-		log.Printf("Got WindowSizeMsg, !m.Ready")
-		m.Viewport = viewport.New(message.Width, message.Height-verticalMarginHeight-1)
-		m.Viewport.YPosition = headerHeight + 1
-		m.Viewport.YOffset = 1
+		log.Printf("!m.Ready")
+		m.Viewport = viewport.New(int(float32(m.WindowWidth)*0.70), contentHeight)
+		m.Viewport.YPosition = lipgloss.Height(m.headerView())
 		m.Viewport.KeyMap.Up.SetKeys("up")
 		m.Viewport.KeyMap.Down.SetKeys("down")
 		m.Viewport.MouseWheelEnabled = true
-
-		m.Viewport, cmd = m.Viewport.Update(message)
-		cmds = append(cmds, cmd)
 
 		var err error
 		m.Glamour, err = glamour.NewTermRenderer(
@@ -109,10 +114,10 @@ func handleWindowSizeMsg(m ArTUIModel, message tea.WindowSizeMsg) (tea.Model, te
 		if err != nil {
 			log.Panicf("glamour problem: %s", err.Error())
 		}
-		log.Printf("Re-wide glamour 1: m.Viewport.Width-5=%d", m.Viewport.Width-5)
 
-		m.List.SetHeight(message.Height - verticalMarginHeight - 1)
 		m.List, cmd = m.List.Update(message)
+		m.List.SetWidth(int(float32(m.WindowWidth) * 0.25))
+		m.List.SetHeight(getContentHeight(m))
 		cmds = append(cmds, cmd)
 
 		markdown, err := m.renderTemplate("AppOverviewTemplate")
@@ -120,17 +125,20 @@ func handleWindowSizeMsg(m ArTUIModel, message tea.WindowSizeMsg) (tea.Model, te
 			log.Panicf("86: %s", err.Error())
 		}
 		m.Viewport.SetContent(markdown)
+		m.Viewport, cmd = m.Viewport.Update(message)
+		cmds = append(cmds, cmd)
 		m.Ready = true
 
 	} else {
-		log.Printf("Got WindowSizeMsg, m.Ready")
-		m.Viewport.Width = message.Width - m.List.Width()
-		m.Viewport.Height = message.Height - verticalMarginHeight - 1
+		log.Printf("m.Ready")
+		m.Viewport.Width = int(float32(m.WindowWidth) * 0.70)
+		m.Viewport.Height = contentHeight
 		m.Viewport, cmd = m.Viewport.Update(message)
 		cmds = append(cmds, cmd)
 
-		m.List.SetHeight(message.Height - verticalMarginHeight - 1)
 		m.List, cmd = m.List.Update(message)
+		m.List.SetWidth(int(float32(m.WindowWidth) * 0.25))
+		m.List.SetHeight(getContentHeight(m))
 		cmds = append(cmds, cmd)
 
 		var err error
@@ -148,6 +156,7 @@ func handleWindowSizeMsg(m ArTUIModel, message tea.WindowSizeMsg) (tea.Model, te
 		}
 		m.Viewport.SetContent(markdown)
 	}
+
 	return m, tea.Batch(cmds...)
 }
 
@@ -177,10 +186,8 @@ func (m ArTUIModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 				log.Panicf("144: %s", err.Error())
 			}
 			m.Viewport.SetContent(markdown)
-			m.Viewport.YOffset = 1
 			m.Viewport, cmd = m.Viewport.Update(message)
 			cmds = append(cmds, cmd)
-			// return m, tea.Batch(cmds...)
 
 		case tea.KeyMsg:
 			switch msg.String() {
@@ -202,7 +209,6 @@ func (m ArTUIModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 					log.Panicf("144: %s", err.Error())
 				}
 				m.Viewport.SetContent(markdown)
-				m.Viewport.YOffset = 1
 				m.Viewport, cmd = m.Viewport.Update(message)
 				cmds = append(cmds, cmd)
 				return m, tea.Batch(cmds...)
@@ -214,7 +220,6 @@ func (m ArTUIModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 					log.Panicf("144: %s", err.Error())
 				}
 				m.Viewport.SetContent(markdown)
-				m.Viewport.YOffset = 1
 				m.Viewport, cmd = m.Viewport.Update(message)
 				cmds = append(cmds, cmd)
 				return m, tea.Batch(cmds...)
@@ -223,6 +228,14 @@ func (m ArTUIModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 
 		case tea.WindowSizeMsg:
 			return handleWindowSizeMsg(m, msg)
+		}
+
+		if m.List.ShowFilter() && m.Ready {
+			m.List.SetWidth(int(float32(m.WindowWidth) * 0.50))
+			m.Viewport.Width = int(float32(m.WindowWidth) * 0.50)
+		} else {
+			m.List.SetWidth(int(float32(m.WindowWidth) * 0.25))
+			m.Viewport.Width = int(float32(m.WindowWidth) * 0.70)
 		}
 
 		m.List, cmd = m.List.Update(message)
@@ -240,18 +253,15 @@ func (m ArTUIModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 func (m ArTUIModel) updateAppList() list.Model {
 	log.Printf("updateAppList: got %d apps", len(m.Applications.Items))
 	var appListItems []list.Item
-	listWidth := 0
 	for _, app := range m.Applications.Items {
 		description := string(app.Status.Health.Status) + "/" + string(app.Status.Sync.Status)
-		if listWidth < len(description) {
-			listWidth = len(description) + 2
-		}
 		appListItems = append(appListItems, AppListItem{
 			Name:            app.Name,
 			ItemDescription: description,
 		})
 	}
-	appList := list.New(appListItems, list.NewDefaultDelegate(), 25, (len(appListItems)*3)+5)
+
+	appList := list.New(appListItems, list.NewDefaultDelegate(), int(float32(m.WindowWidth)*0.25), getContentHeight(m))
 	appList.Title = "App List"
 	appList.KeyMap = keys.AppListKeyBinding
 	appList.SetShowTitle(true)

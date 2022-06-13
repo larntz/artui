@@ -2,6 +2,7 @@ package argo
 
 import (
 	"context"
+	"log"
 
 	"github.com/argoproj/argo-cd/v2/pkg/apiclient"
 	"github.com/argoproj/argo-cd/v2/pkg/apiclient/application"
@@ -24,7 +25,7 @@ func GetArgoClient(sessionRequest session.SessionCreateRequest, clientOptions ap
 	defer cancel()
 	session, err := sessionClient.Create(ctx, &sessionRequest)
 	if err != nil {
-		panic(err)
+		log.Fatalf("GetArgoClient sessionClient.create() error: %s", err)
 	}
 	clientOptions.AuthToken = session.Token
 	return apiclient.NewClientOrDie(&clientOptions)
@@ -41,7 +42,7 @@ func GetApplications(sessionRequest session.SessionCreateRequest, clientOptions 
 	defer cancel()
 	session, err := sessionClient.Create(ctx, &sessionRequest)
 	if err != nil {
-		panic(err)
+		log.Fatalf("GetApplications sessionClient.create() error: %s", err)
 	}
 
 	clientOptions.AuthToken = session.Token
@@ -51,7 +52,7 @@ func GetApplications(sessionRequest session.SessionCreateRequest, clientOptions 
 	defer appCloser.Close()
 	apps, err := appClient.List(context.TODO(), &application.ApplicationQuery{})
 	if err != nil {
-		panic(err)
+		log.Fatalf("GetApplications apiClient.List() error: %s", err)
 	}
 	return *apps
 }
@@ -62,7 +63,7 @@ func GetApplications2(argoClient apiclient.Client) v1alpha1.ApplicationList {
 	defer appCloser.Close()
 	apps, err := appClient.List(context.TODO(), &application.ApplicationQuery{})
 	if err != nil {
-		panic(err)
+		log.Fatalf("GetApplications2 apiClient.List() error: %s", err)
 	}
 	return *apps
 }
