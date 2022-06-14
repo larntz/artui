@@ -30,5 +30,6 @@ var ViewportStyle = lipgloss.NewStyle().
 
 // AppListStyle sets the style of our application list
 var AppListStyle = lipgloss.NewStyle().
+	MarginTop(1).
 	MarginRight(2).
 	MarginLeft(0)
