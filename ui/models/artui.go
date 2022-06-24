@@ -191,3 +191,7 @@ func (m ArTUIModel) renderTemplate(templateName string) (string, error) {
 	}
 	return m.Glamour.Render(buf.String())
 }
+
+func (m ArTUIModel) asdf() {
+
+}

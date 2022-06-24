@@ -39,9 +39,8 @@ func handleWindowSizeMsg(m ArTUIModel, message tea.WindowSizeMsg) (tea.Model, te
 			log.Panicf("glamour problem: %s", err.Error())
 		}
 
+		m.List.SetSize(int(float32(m.WindowWidth)*0.25), getContentHeight(m))
 		m.List, cmd = m.List.Update(message)
-		m.List.SetWidth(int(float32(m.WindowWidth) * 0.25))
-		m.List.SetHeight(getContentHeight(m))
 		cmds = append(cmds, cmd)
 
 		markdown, err := m.renderTemplate("AppOverviewTemplate")
@@ -56,9 +55,8 @@ func handleWindowSizeMsg(m ArTUIModel, message tea.WindowSizeMsg) (tea.Model, te
 	} else {
 		log.Printf("m.Ready")
 
+		m.List.SetSize(int(float32(m.WindowWidth)*0.25), getContentHeight(m))
 		m.List, cmd = m.List.Update(message)
-		m.List.SetWidth(int(float32(m.WindowWidth) * 0.25))
-		m.List.SetHeight(getContentHeight(m))
 		cmds = append(cmds, cmd)
 
 		var err error

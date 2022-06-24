@@ -34,14 +34,15 @@ func (m ArTUIModel) updateAppList() list.Model {
 		})
 	}
 
-	appList := list.New(appListItems, list.NewDefaultDelegate(), int(float32(m.WindowWidth)*0.25), getContentHeight(m))
+	appList := list.New(appListItems, list.NewDefaultDelegate(), 0, 0)
 	appList.Title = "App List"
 	appList.KeyMap = keys.AppListKeyBinding
 	appList.SetShowTitle(true)
 	appList.SetShowPagination(true)
-	appList.SetShowHelp(false)
+	appList.SetShowHelp(true)
 	appList.SetShowFilter(true)
 	appList.SetFilteringEnabled(true)
+	appList.SetSize(int(float32(m.WindowWidth)*0.25), getContentHeight(m))
 
 	return appList
 }
