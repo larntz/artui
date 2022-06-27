@@ -11,6 +11,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"k8s.io/client-go/tools/clientcmd"
 
 	"github.com/larntz/artui/ui"
 )
@@ -71,6 +72,7 @@ func Execute() {
 
 	// start application
 	log.Println("Application Start")
+
 	log.Println("UI Start")
 	p := tea.NewProgram(ui.InitializeModel(sessionRequest, argocdClientOptions), tea.WithAltScreen(), tea.WithMouseAllMotion()) // tea.WithMouseCellMotion(),
 	if err := p.Start(); err != nil {
@@ -95,6 +97,15 @@ func init() {
 
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
+
+	// try to get current k8s context
+	kubeConfigPath, err := os.UserHomeDir()
+	cobra.CheckErr(err)
+	kubeConfigPath += "/.kube/config"
+	config := clientcmd.GetConfigFromFileOrDie(kubeConfigPath)
+	fmt.Printf("Current Context: %s\n", config.CurrentContext)
+	artuiConfigPrefix := "argocd.contexts." + config.CurrentContext + "."
+
 	if cfgFile != "" {
 		// Use config file from the flag.
 		viper.SetConfigFile(cfgFile)
@@ -117,32 +128,38 @@ func initConfig() {
 	if err := viper.ReadInConfig(); err == nil {
 		fmt.Fprintln(os.Stderr, "Using config file:", viper.ConfigFileUsed())
 
-		if host := viper.GetString("argocd.host"); host == "" {
+		// check if config has k8s context specific settings
+		if !viper.IsSet(artuiConfigPrefix + "username") {
+			// change prefix to use default config options
+			artuiConfigPrefix = "argocd.default."
+		}
+
+		if host := viper.GetString(artuiConfigPrefix + "host"); host == "" {
 			fmt.Println("Unable to get argocd host configuration.")
 			// os.Exit(1)
 		} else {
 			argocdClientOptions.ServerAddr = host
 		}
 
-		if ns := viper.GetString("argocd.namespace"); ns == "" {
+		if ns := viper.GetString(artuiConfigPrefix + "namespace"); ns == "" {
 			fmt.Println("Unable to get argocd ns configuration.")
 			os.Exit(1)
 		} else {
 			argocdClientOptions.PortForwardNamespace = ns
 		}
 
-		argocdClientOptions.PortForward = viper.GetBool("argocd.port-forward")
-		argocdClientOptions.Insecure = viper.GetBool("argocd.insecure")
-		argocdClientOptions.PlainText = viper.GetBool("argocd.plaintext")
+		argocdClientOptions.PortForward = viper.GetBool(artuiConfigPrefix + "port-forward")
+		argocdClientOptions.Insecure = viper.GetBool(artuiConfigPrefix + "insecure")
+		argocdClientOptions.PlainText = viper.GetBool(artuiConfigPrefix + "plaintext")
 
-		if user := viper.GetString("argocd.username"); user == "" {
+		if user := viper.GetString(artuiConfigPrefix + "username"); user == "" {
 			fmt.Println("Unable to get argocd user configuration.")
 			os.Exit(1)
 		} else {
 			sessionRequest.Username = user
 		}
 
-		if user := viper.GetString("argocd.username"); user == "" {
+		if user := viper.GetString(artuiConfigPrefix + "username"); user == "" {
 			fmt.Println("Unable to get argocd user configuration.")
 			os.Exit(1)
 		} else {

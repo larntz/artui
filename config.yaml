@@ -1,8 +1,26 @@
 argocd:
-  host: "port-forward"
-  namespace: "argocd"
-  username: "admin"
-  insecure: false # Skip server certificate and domain verification
-  grpcweb: false
-  plaintext: true # Disable TLS
-  port-forward: true # Connect to a random argocd-server port using port forwarding
+  default:
+    host: "port-forward"
+    namespace: "argocd"
+    username: "admin"
+    insecure: false # Skip server certificate and domain verification
+    grpcweb: false
+    plaintext: true # Disable TLS
+    port-forward: true # Connect to a random argocd-server port using port forwarding
+  contexts:
+    cluster-context-1:
+      host: "port-forward"
+      namespace: "argocd"
+      username: "admin"
+      insecure: true # Skip server certificate and domain verification
+      grpcweb: false
+      plaintext: false # Disable TLS
+      port-forward: true # Connect to a random argocd-server port using port forwarding
+    cluster-context-2:
+      host: "port-forward"
+      namespace: "argocd"
+      username: "admin"
+      insecure: false # Skip server certificate and domain verification
+      grpcweb: false
+      plaintext: true # Disable TLS
+      port-forward: true # Connect to a random argocd-server port using port forwarding

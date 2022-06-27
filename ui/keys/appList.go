@@ -16,11 +16,11 @@ var AppListKeyBinding = list.KeyMap{
 	GoToStart:   key.NewBinding(key.WithDisabled()),
 	GoToEnd:     key.NewBinding(key.WithDisabled()),
 	Filter:      key.NewBinding(key.WithKeys("/"), key.WithHelp("/", "search")),
-	ClearFilter: key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "clear search")),
+	ClearFilter: key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "clear")),
 
 	// Keybindings used when setting a filter.
-	CancelWhileFiltering: key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "cancel search")),
-	AcceptWhileFiltering: key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "accept search")),
+	CancelWhileFiltering: key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "cancel")),
+	AcceptWhileFiltering: key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "search")),
 
 	// Help toggle keybindings.
 	ShowFullHelp:  key.NewBinding(key.WithDisabled()),
