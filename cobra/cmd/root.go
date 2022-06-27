@@ -103,7 +103,7 @@ func initConfig() {
 	cobra.CheckErr(err)
 	kubeConfigPath += "/.kube/config"
 	config := clientcmd.GetConfigFromFileOrDie(kubeConfigPath)
-	fmt.Printf("Current Context: %s\n", config.CurrentContext)
+	fmt.Printf("Current kube context: %s\n", config.CurrentContext)
 	artuiConfigPrefix := "argocd.contexts." + config.CurrentContext + "."
 
 	if cfgFile != "" {
@@ -131,6 +131,7 @@ func initConfig() {
 		// check if config has k8s context specific settings
 		if !viper.IsSet(artuiConfigPrefix + "username") {
 			// change prefix to use default config options
+			fmt.Printf("Changing config context to default (%s not found)\n", config.CurrentContext)
 			artuiConfigPrefix = "argocd.default."
 		}
 
@@ -151,13 +152,6 @@ func initConfig() {
 		argocdClientOptions.PortForward = viper.GetBool(artuiConfigPrefix + "port-forward")
 		argocdClientOptions.Insecure = viper.GetBool(artuiConfigPrefix + "insecure")
 		argocdClientOptions.PlainText = viper.GetBool(artuiConfigPrefix + "plaintext")
-
-		if user := viper.GetString(artuiConfigPrefix + "username"); user == "" {
-			fmt.Println("Unable to get argocd user configuration.")
-			os.Exit(1)
-		} else {
-			sessionRequest.Username = user
-		}
 
 		if user := viper.GetString(artuiConfigPrefix + "username"); user == "" {
 			fmt.Println("Unable to get argocd user configuration.")
