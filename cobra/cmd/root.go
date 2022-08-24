@@ -1,10 +1,12 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
 	"path/filepath"
+	"sync"
 
 	"github.com/argoproj/argo-cd/v2/pkg/apiclient"
 	"github.com/argoproj/argo-cd/v2/pkg/apiclient/session"
@@ -13,10 +15,15 @@ import (
 	"github.com/spf13/viper"
 	"k8s.io/client-go/tools/clientcmd"
 
+	"github.com/larntz/artui/argo"
 	"github.com/larntz/artui/ui"
+	"github.com/larntz/artui/ui/models"
 )
 
 var cfgFile string
+
+// Cluster gets set to current kubeconfig context
+var Cluster string
 
 var argocdClientOptions = apiclient.ClientOptions{
 	ServerAddr:           "port-forward",
@@ -73,8 +80,32 @@ func Execute() {
 	// start application
 	log.Println("Application Start")
 
+	argoClient := argo.Clients{
+		ClientOptions: argocdClientOptions,
+	}
+	argoClient.Login(sessionRequest)
+
+	appEventChan := make(chan models.AppEvent, 250)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	wg := new(sync.WaitGroup)
+	wg.Add(1)
+
 	log.Println("UI Start")
-	p := tea.NewProgram(ui.InitializeModel(sessionRequest, argocdClientOptions), tea.WithAltScreen(), tea.WithMouseAllMotion()) // tea.WithMouseCellMotion(),
+	p := tea.NewProgram(ui.InitializeModel(Cluster, appEventChan), tea.WithAltScreen(), tea.WithMouseAllMotion())
+
+	go func() {
+		go argoClient.WatchApplication(ctx, wg, appEventChan)
+
+		for {
+			select {
+			case msg := <-appEventChan:
+				p.Send(msg)
+			}
+
+		}
+	}()
+
 	if err := p.Start(); err != nil {
 		panic(err)
 	}
@@ -104,6 +135,7 @@ func initConfig() {
 	kubeConfigPath += "/.kube/config"
 	config := clientcmd.GetConfigFromFileOrDie(kubeConfigPath)
 	fmt.Printf("Current kube context: %s\n", config.CurrentContext)
+	Cluster = config.CurrentContext
 	artuiConfigPrefix := "argocd.contexts." + config.CurrentContext + "."
 
 	if cfgFile != "" {

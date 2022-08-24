@@ -28,14 +28,6 @@ func inputUpdate(m ArTUIModel, message tea.Msg) (tea.Model, tea.Cmd) {
 				m.Activity = View
 				return m, tea.Quit
 
-			case "r", "refresh-applications":
-				log.Printf("User requested application refresh")
-				m.Textinput.Prompt = " "
-				m.Textinput.SetValue("")
-				m.Textinput.Blur()
-				m.Activity = View
-				return m, GetApplications(m)
-
 			default:
 				m.Textinput.Prompt = " "
 				m.Textinput.SetValue("")

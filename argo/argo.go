@@ -3,85 +3,79 @@ package argo
 import (
 	"context"
 	"log"
+	"sync"
 	"time"
 
 	"github.com/argoproj/argo-cd/v2/pkg/apiclient"
 	"github.com/argoproj/argo-cd/v2/pkg/apiclient/application"
 	"github.com/argoproj/argo-cd/v2/pkg/apiclient/session"
-	"github.com/argoproj/argo-cd/v2/pkg/apis/application/v1alpha1"
+	"github.com/larntz/artui/ui/models"
 )
 
-// TODO the idea is to save the client in the application state to prevent having to create a client on every refresh.
-// Eventually I'd like to have it referesh automatically every x seconds, and be able to request a refresh.
-// Right now we are seeing a port forwarding error message on some refreshses. I am hoping that reusing the client will prevent that.
+// Clients holds argocd clients
+type Clients struct {
+	APIClient     apiclient.Client
+	SessionClient session.SessionServiceClient
+	ClientOptions apiclient.ClientOptions
+}
 
-// GetArgoClient returns an argocd client
-// func GetArgoClient(sessionRequest session.SessionCreateRequest, clientOptions apiclient.ClientOptions) apiclient.Client {
-//
-// 	argoClient := apiclient.NewClientOrDie(&clientOptions)
-// 	sessionCloser, sessionClient := argoClient.NewSessionClientOrDie()
-// 	defer sessionCloser.Close()
-//
-// 	ctx, cancel := context.WithCancel(context.Background())
-// 	defer cancel()
-// 	session, err := sessionClient.Create(ctx, &sessionRequest)
-// 	if err != nil {
-// 		log.Fatalf("GetArgoClient sessionClient.create() error: %s", err)
-// 	}
-// 	clientOptions.AuthToken = session.Token
-// 	return apiclient.NewClientOrDie(&clientOptions)
-// }
-
-// GetApplications gets argocd apps...
-func GetApplications(sessionRequest session.SessionCreateRequest, clientOptions apiclient.ClientOptions) v1alpha1.ApplicationList {
-
-	log.Printf("starting apiclient.NewClient")
-	argoClient, err := apiclient.NewClient(&clientOptions)
+// Login performs user and password authentication
+func (client *Clients) Login(credentials session.SessionCreateRequest) {
+	log.Printf("ArgoLogin apiclient.NewClient")
+	argoClient, err := apiclient.NewClient(&client.ClientOptions)
 	if err != nil {
 		log.Fatalf("apiclient.NewClient err: %s", err)
 	}
+
 	sessionCloser, sessionClient := argoClient.NewSessionClientOrDie()
+	client.SessionClient = sessionClient
 	defer sessionCloser.Close()
 
-	// ctx, cancel := context.WithCancel(context.Background())
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Second*2))
-	log.Printf("Created context.WithTimeout, next setp create session")
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Second*5))
+	log.Printf("created context.WithTimeout(5s), next step create session")
 	defer cancel()
-	session, err := sessionClient.Create(ctx, &sessionRequest)
+	session, err := sessionClient.Create(ctx, &credentials)
 	if err != nil {
 		log.Fatalf("GetApplications sessionClient.create() error: %s", err)
 	}
+	client.ClientOptions.AuthToken = session.Token
 
-	log.Printf("starting NewClient")
-	clientOptions.AuthToken = session.Token
-	argoClient, err = apiclient.NewClient(&clientOptions)
+	log.Printf("starting NewClient with session.Token")
+	client.APIClient, err = apiclient.NewClient(&client.ClientOptions)
 	if err != nil {
 		log.Fatalf("apiclient.NewClient err: %s", err)
 	}
+	log.Printf("ArgoLogin complete")
+}
 
-	log.Printf("starting NewApplication")
-	appCloser, appClient, err := argoClient.NewApplicationClient()
+// WatchApplication watches an app for changes
+func (client Clients) WatchApplication(ctx context.Context, wg *sync.WaitGroup, ch chan<- models.AppEvent) {
+	defer wg.Done()
+	log.Printf("starting WatchApplication")
+	appCloser, appClient, err := client.APIClient.NewApplicationClient()
 	if err != nil {
 		log.Fatalf("apiClient.NewApplicationClient err: %s", err)
 	}
 	defer appCloser.Close()
 
-	log.Printf("starting appClient.List")
-	apps, err := appClient.List(context.TODO(), &application.ApplicationQuery{})
-	if err != nil {
-		log.Fatalf("GetApplications apiClient.List() error: %s", err)
-	}
-	log.Printf("returning from argo.GetApplications")
-	return *apps
-}
+	appWatcher, err := appClient.Watch(ctx, &application.ApplicationQuery{})
+	for {
+		select {
 
-// GetApplications2 gets argocd apps...
-// func GetApplications2(argoClient apiclient.Client) v1alpha1.ApplicationList {
-// 	appCloser, appClient := argoClient.NewApplicationClientOrDie()
-// 	defer appCloser.Close()
-// 	apps, err := appClient.List(context.TODO(), &application.ApplicationQuery{})
-// 	if err != nil {
-// 		log.Fatalf("GetApplications2 apiClient.List() error: %s", err)
-// 	}
-// 	return *apps
-// }
+		case <-ctx.Done():
+			log.Println("WatchApplication: ctx.Done()")
+			return
+
+		default:
+			log.Printf("WatchApplication checking Recv()")
+			event, err := appWatcher.Recv()
+
+			if err != nil {
+				log.Printf("WatchApplication err: %s", err)
+			} else {
+				log.Printf("WatchApplication sending %s: %s", event.Application.Name, event.Type)
+				ch <- models.AppEvent{Event: *event}
+			}
+		}
+	}
+}

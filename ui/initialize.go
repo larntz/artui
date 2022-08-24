@@ -2,9 +2,8 @@ package ui
 
 import (
 	"text/template"
+	"time"
 
-	"github.com/argoproj/argo-cd/v2/pkg/apiclient"
-	"github.com/argoproj/argo-cd/v2/pkg/apiclient/session"
 	"github.com/argoproj/argo-cd/v2/pkg/apis/application/v1alpha1"
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/textinput"
@@ -15,20 +14,27 @@ import (
 )
 
 // InitializeModel creates the initial model struct
-func InitializeModel(sessionRequest session.SessionCreateRequest, apiClient apiclient.ClientOptions) models.ArTUIModel {
+func InitializeModel(cluster string, appEvent <-chan models.AppEvent) models.ArTUIModel {
 	appList := initAppList(v1alpha1.ApplicationList{})
+	appList.Title = cluster
 	textInput := initTextInput()
 	templates := initTemplates()
+	refreshDuration, err := time.ParseDuration("15s")
+	if err != nil {
+		panic(err)
+	}
 
 	return models.ArTUIModel{
-		ArgoSessionRequest: sessionRequest,
-		APIClient:          apiClient,
-		Ready:              false,
-		Activity:           models.View,
-		List:               appList,
-		Applications:       v1alpha1.ApplicationList{},
-		Textinput:          textInput,
-		Templates:          templates,
+		Cluster:         cluster,
+		Ready:           false,
+		Activity:        models.View,
+		List:            appList,
+		Applications:    v1alpha1.ApplicationList{},
+		Textinput:       textInput,
+		Templates:       templates,
+		LastAppRefresh:  time.Now(),
+		RefreshDuration: refreshDuration,
+		AppEventChan:    appEvent,
 	}
 }
 
@@ -64,7 +70,6 @@ func initAppList(apps v1alpha1.ApplicationList) list.Model {
 		})
 	}
 	appList := list.New(appsListModel, list.NewDefaultDelegate(), 20, 10)
-	appList.Title = "Initializing"
 	appList.KeyMap = keys.AppListKeyBinding
 	appList.SetShowTitle(true)
 	appList.SetShowPagination(true)

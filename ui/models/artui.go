@@ -4,12 +4,10 @@ import (
 	"bytes"
 	"fmt"
 	"log"
-	"reflect"
 	"strings"
 	"text/template"
+	"time"
 
-	"github.com/argoproj/argo-cd/v2/pkg/apiclient"
-	"github.com/argoproj/argo-cd/v2/pkg/apiclient/session"
 	"github.com/argoproj/argo-cd/v2/pkg/apis/application/v1alpha1"
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/textinput"
@@ -34,23 +32,26 @@ const (
 
 // ArTUIModel is the bubbletea app model
 type ArTUIModel struct {
-	APIClient          apiclient.ClientOptions
-	ArgoSessionRequest session.SessionCreateRequest
-	Ready              bool
-	Activity           mode
-	Applications       v1alpha1.ApplicationList
-	List               list.Model
-	Viewport           viewport.Model
-	Textinput          textinput.Model
-	Glamour            *glamour.TermRenderer
-	Templates          *template.Template
-	WindowHeight       int
-	WindowWidth        int
+	Cluster         string
+	Ready           bool
+	Activity        mode
+	Applications    v1alpha1.ApplicationList
+	List            list.Model
+	Viewport        viewport.Model
+	Textinput       textinput.Model
+	Glamour         *glamour.TermRenderer
+	Templates       *template.Template
+	WindowHeight    int
+	WindowWidth     int
+	LastAppRefresh  time.Time
+	RefreshDuration time.Duration
+	AppEventChan    <-chan AppEvent
 }
 
 // Init the app model
 func (m ArTUIModel) Init() tea.Cmd {
-	return tea.Batch(GetApplications(m))
+	//return tea.Batch(GetApplications(m))
+	return nil
 }
 
 // View the model
@@ -63,7 +64,6 @@ func (m ArTUIModel) View() string {
 
 // Update the app model
 func (m ArTUIModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
-	log.Printf("message type = %s, message = %s, activity = %d", reflect.TypeOf(message), message, m.Activity)
 	var (
 		cmd  tea.Cmd
 		cmds []tea.Cmd
@@ -80,25 +80,44 @@ func (m ArTUIModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 	} else if m.Activity == Input {
 		return inputUpdate(m, message)
 	} else if m.Activity == View {
+
 		switch msg := message.(type) {
 
-		case GetApplicationMsg:
-			log.Printf("GetApplicationMsg recieved. len(msg.applications) = %d", len(msg.applications.Items))
-			selected := m.List.Index()
-			m.Applications = msg.applications
-			m.List = m.updateAppList()
-			m.List.Select(selected)
-			m.List.Update(msg)
+		case AppEvent:
+			log.Printf("AppEvent recieved. Name: %s, Health: %s, Sync: %s",
+				msg.Event.Application.Name, msg.Event.Application.Status.Health.Status, msg.Event.Application.Status.Sync.Status)
+			m.UpdateApplications(msg.Event.Application)
+			description := string(msg.Event.Application.Status.Health.Status) + "/" + string(msg.Event.Application.Status.Sync.Status)
+			appItem := AppListItem{
+				Name:            msg.Event.Application.Name,
+				ItemDescription: description,
+			}
+
+			// TODO
+			// figure out if the item is already in the list and if not add it.
+			// if it is already in the list update/overwrite it
+			found := false
+			for i, v := range m.List.Items() {
+				if v.FilterValue() == msg.Event.Application.Name {
+					cmd = m.List.SetItem(i, appItem)
+					found = true
+					break
+				}
+			}
+			if !found {
+				cmd = m.List.InsertItem(len(m.List.Items())+1, appItem)
+			}
 			cmds = append(cmds, cmd)
+
 			markdown, err := m.renderTemplate("AppOverviewTemplate")
 			if err != nil {
 				log.Panicf("144: %s", err.Error())
 			}
 			m.Viewport.SetContent(markdown)
-			m.Viewport, cmd = m.Viewport.Update(message)
-			cmds = append(cmds, cmd)
+			return m, tea.Batch(cmds...)
 
 		case tea.KeyMsg:
+			log.Printf("KeyMsg recieved: %s ", msg.String())
 			switch msg.String() {
 			case ":":
 				m.Textinput.Focus()
@@ -138,6 +157,7 @@ func (m ArTUIModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 			} // end inner switch
 
 		case tea.WindowSizeMsg:
+			log.Printf("WindowSizeMsg received.")
 			return handleWindowSizeMsg(m, msg)
 		}
 
@@ -192,6 +212,13 @@ func (m ArTUIModel) renderTemplate(templateName string) (string, error) {
 	return m.Glamour.Render(buf.String())
 }
 
-func (m ArTUIModel) asdf() {
-
+// UpdateApplications updates the model application list
+func (m *ArTUIModel) UpdateApplications(updateApp v1alpha1.Application) {
+	for i, app := range m.Applications.Items {
+		if app.UID == updateApp.UID {
+			m.Applications.Items[i] = updateApp
+			return
+		}
+	}
+	m.Applications.Items = append(m.Applications.Items, updateApp)
 }

@@ -11,14 +11,17 @@ import (
 // Find correct application
 func getApplication(m ArTUIModel) (v1alpha1.Application, error) {
 	log.Printf("getApplications: len(m.Applications.Items) = %d", len(m.Applications.Items))
+
 	if m.List.SelectedItem() != nil {
 		log.Printf("getApplication: SelectedItem = %v", m.List.SelectedItem().FilterValue())
-	}
-	for _, v := range m.Applications.Items {
-		log.Printf("getApplication: want=%s, got=%s", v.Name, m.List.SelectedItem().FilterValue())
-		if v.Name == m.List.SelectedItem().FilterValue() {
-			return v, nil
+		for _, v := range m.Applications.Items {
+			if v.Name == m.List.SelectedItem().FilterValue() {
+				log.Printf("getApplication: want=%s, got=%s", m.List.SelectedItem().FilterValue(), v.Name)
+				return v, nil
+			}
 		}
+	} else {
+		log.Printf("getApplciation: m.List.SelectedItem() == nil")
 	}
 	log.Printf("getApplication: failed to find application")
 	return v1alpha1.Application{}, errors.New("failed-to-find-app")
