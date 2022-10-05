@@ -1,3 +1,4 @@
+// Package argo interacts with argocd server
 package argo
 
 import (
@@ -10,6 +11,7 @@ import (
 	"github.com/argoproj/argo-cd/v2/pkg/apiclient"
 	"github.com/argoproj/argo-cd/v2/pkg/apiclient/application"
 	"github.com/argoproj/argo-cd/v2/pkg/apiclient/session"
+	"github.com/argoproj/argo-cd/v2/pkg/apis/application/v1alpha1"
 	"github.com/larntz/artui/ui/models"
 )
 
@@ -85,7 +87,24 @@ func (client Clients) WatchApplication(ctx context.Context, wg *sync.WaitGroup, 
 }
 
 // RefreshApplication checks for application updates, but does not sync unless autoSync is enabled on the application
-func (client Clients) RefreshApplication(ctx context.Context) {
-	// what needs done here to refrewsh
+func (client Clients) RefreshApplication(ctx context.Context, wg *sync.WaitGroup, app v1alpha1.Application, hardRefresh bool) {
+	defer wg.Done()
+	log.Printf("starting WatchApplication")
+	appCloser, appClient, err := client.APIClient.NewApplicationClient()
+	if err != nil {
+		log.Fatalf("apiClient.NewApplicationClient err: %s", err)
+	}
+	defer appCloser.Close()
 
+	refresh := fmt.Sprintf("%t", hardRefresh)
+	appQuery := application.ApplicationQuery{
+		Name:    &app.Name,
+		Refresh: &refresh,
+	}
+
+	returnedApp, err := appClient.Get(ctx, &appQuery)
+	if err != nil {
+		fmt.Printf("error getting application: %s", err.Error())
+	}
+	log.Printf("RefreshApplication: %v", returnedApp)
 }
