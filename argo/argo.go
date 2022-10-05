@@ -2,6 +2,7 @@ package argo
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"sync"
 	"time"
@@ -24,6 +25,7 @@ func (client *Clients) Login(credentials session.SessionCreateRequest) {
 	log.Printf("ArgoLogin apiclient.NewClient")
 	argoClient, err := apiclient.NewClient(&client.ClientOptions)
 	if err != nil {
+		fmt.Printf("Error creating argocd client: %s", err.Error())
 		log.Fatalf("apiclient.NewClient err: %s", err)
 	}
 
@@ -36,6 +38,7 @@ func (client *Clients) Login(credentials session.SessionCreateRequest) {
 	defer cancel()
 	session, err := sessionClient.Create(ctx, &credentials)
 	if err != nil {
+		fmt.Printf("Error creating session: %s", err.Error())
 		log.Fatalf("GetApplications sessionClient.create() error: %s", err)
 	}
 	client.ClientOptions.AuthToken = session.Token
@@ -43,6 +46,7 @@ func (client *Clients) Login(credentials session.SessionCreateRequest) {
 	log.Printf("starting NewClient with session.Token")
 	client.APIClient, err = apiclient.NewClient(&client.ClientOptions)
 	if err != nil {
+		fmt.Printf("Error api client: %s", err.Error())
 		log.Fatalf("apiclient.NewClient err: %s", err)
 	}
 	log.Printf("ArgoLogin complete")
@@ -78,4 +82,10 @@ func (client Clients) WatchApplication(ctx context.Context, wg *sync.WaitGroup, 
 			}
 		}
 	}
+}
+
+// RefreshApplication checks for application updates, but does not sync unless autoSync is enabled on the application
+func (client Clients) RefreshApplication(ctx context.Context) {
+	// what needs done here to refrewsh
+
 }
