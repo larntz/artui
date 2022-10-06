@@ -198,5 +198,7 @@ func initConfig() {
 		} else {
 			sessionRequest.Password = password
 		}
-	}
+	} else {
+    fmt.Printf("configuration failed\n")
+  }
 }
