@@ -84,8 +84,8 @@ func (m ArTUIModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg := message.(type) {
 
 		case AppEvent:
-			log.Printf("AppEvent recieved. Name: %s, Health: %s, Sync: %s",
-				msg.Event.Application.Name, msg.Event.Application.Status.Health.Status, msg.Event.Application.Status.Sync.Status)
+			log.Printf("AppEvent recieved. Name: %s, Health: %s, Sync: %s, EventType: %s",
+				msg.Event.Application.Name, msg.Event.Application.Status.Health.Status, msg.Event.Application.Status.Sync.Status, msg.Event.Type)
 			m.UpdateApplications(msg.Event.Application)
 			description := string(msg.Event.Application.Status.Health.Status) + "/" + string(msg.Event.Application.Status.Sync.Status)
 			appItem := AppListItem{
@@ -94,27 +94,38 @@ func (m ArTUIModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 			}
 
 			// TODO
-			// figure out if the item is already in the list and if not add it.
-			// if it is already in the list update/overwrite it
-			found := false
-			for i, v := range m.List.Items() {
-				if v.FilterValue() == msg.Event.Application.Name {
-					cmd = m.List.SetItem(i, appItem)
-					found = true
-					break
+			// currently we add the application if we get an event and it doesn't exist, but
+			// we need to detect delete events and them remove the application from the list.
+			switch msg.Event.Type {
+			case "DELETED":
+				for i, v := range m.List.Items() {
+					if v.FilterValue() == msg.Event.Application.Name {
+						m.List.RemoveItem(i)
+						break
+					}
 				}
-			}
-			if !found {
-				cmd = m.List.InsertItem(len(m.List.Items())+1, appItem)
-			}
-			cmds = append(cmds, cmd)
 
-			markdown, err := m.renderTemplate("AppOverviewTemplate")
-			if err != nil {
-				log.Panicf("144: %s", err.Error())
+			default:
+				found := false
+				for i, v := range m.List.Items() {
+					if v.FilterValue() == msg.Event.Application.Name {
+						cmd = m.List.SetItem(i, appItem)
+						found = true
+						break
+					}
+				}
+				if !found {
+					cmd = m.List.InsertItem(len(m.List.Items())+1, appItem)
+				}
+				cmds = append(cmds, cmd)
+
+				markdown, err := m.renderTemplate("AppOverviewTemplate")
+				if err != nil {
+					log.Panicf("144: %s", err.Error())
+				}
+				m.Viewport.SetContent(markdown)
+				return m, tea.Batch(cmds...)
 			}
-			m.Viewport.SetContent(markdown)
-			return m, tea.Batch(cmds...)
 
 		case tea.KeyMsg:
 			log.Printf("KeyMsg recieved: %s ", msg.String())

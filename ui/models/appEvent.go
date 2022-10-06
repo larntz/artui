@@ -1,3 +1,4 @@
+// Package models holds the ui model
 package models
 
 import (
