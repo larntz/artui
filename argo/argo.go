@@ -54,8 +54,8 @@ func (client *Clients) Login(credentials session.SessionCreateRequest) {
 	log.Printf("ArgoLogin complete")
 }
 
-// WatchApplication watches an app for changes
-func (client Clients) WatchApplication(ctx context.Context, wg *sync.WaitGroup, ch chan<- models.AppEvent) {
+// WatchApplications watches an app for changes
+func (client Clients) WatchApplications(ctx context.Context, wg *sync.WaitGroup, ch chan<- models.AppEvent) {
 	defer wg.Done()
 	log.Printf("starting WatchApplication")
 	appCloser, appClient, err := client.APIClient.NewApplicationClient()
@@ -86,15 +86,34 @@ func (client Clients) WatchApplication(ctx context.Context, wg *sync.WaitGroup, 
 	}
 }
 
-// RefreshApplication checks for application updates, but does not sync unless autoSync is enabled on the application
-func (client Clients) RefreshApplication(ctx context.Context, wg *sync.WaitGroup, app v1alpha1.Application, hardRefresh bool) {
+// ArgoWorker waits for commands from the ui
+func (client Clients) ArgoWorker(ctx context.Context, wg *sync.WaitGroup, ch <-chan models.WorkerCmd) {
 	defer wg.Done()
-	log.Printf("starting WatchApplication")
-	appCloser, appClient, err := client.APIClient.NewApplicationClient()
-	if err != nil {
-		log.Fatalf("apiClient.NewApplicationClient err: %s", err)
+	log.Printf("starting ArgoWorker")
+	// appCloser, appClient, err := client.APIClient.NewApplicationClient()
+	// if err != nil {
+	// 	log.Fatalf("apiClient.NewApplicationClient err: %s", err)
+	// }
+	// defer appCloser.Close()
+
+	select {
+	// wait for commands and then do some stuff here.
+	/*
+	   // not sure yet if I should send appClient on a
+	   goroutine or have the function create a new client.
+	       case refresh:
+	         go RefreshApplication(appClient, app)
+	       case hardRefresh:
+	         go RefreshAPplicatin(appClient, app,hard=true)
+	       case Sync:
+	         go SyncAplication(appClient, app)
+	*/
 	}
-	defer appCloser.Close()
+}
+
+// RefreshApplication checks for application updates, but does not sync unless autoSync is enabled on the application.
+func (client Clients) RefreshApplication(ctx context.Context, appClient application.ApplicationServiceClient, app v1alpha1.Application, hardRefresh bool) {
+	log.Printf("starting RefreshApplication")
 
 	refresh := fmt.Sprintf("%t", hardRefresh)
 	appQuery := application.ApplicationQuery{
