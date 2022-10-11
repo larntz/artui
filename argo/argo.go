@@ -65,6 +65,11 @@ func (client Clients) WatchApplications(ctx context.Context, wg *sync.WaitGroup,
 	defer appCloser.Close()
 
 	appWatcher, err := appClient.Watch(ctx, &application.ApplicationQuery{})
+	if err != nil {
+		log.Printf("appClientWatch(1) err: %s", err)
+		fmt.Printf("cannot watch applications, exiting")
+		log.Fatal("cannot watch applications, exiting")
+	}
 	for {
 		select {
 
@@ -78,6 +83,10 @@ func (client Clients) WatchApplications(ctx context.Context, wg *sync.WaitGroup,
 
 			if err != nil {
 				log.Printf("WatchApplication err: %s", err)
+				// TODO: issue #16
+				// need to login again here, create all new clients.
+				// should probably be moved to functions.
+				// need to save credentials passed to the Login function or re-read somehow
 			} else {
 				log.Printf("WatchApplication sending %s: %s", event.Application.Name, event.Type)
 				ch <- models.AppEvent{Event: *event}
