@@ -93,9 +93,6 @@ func (m ArTUIModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 				ItemDescription: description,
 			}
 
-			// TODO
-			// currently we add the application if we get an event and it doesn't exist, but
-			// we need to detect delete events and them remove the application from the list.
 			switch msg.Event.Type {
 			case "DELETED":
 				for i, v := range m.List.Items() {
@@ -104,28 +101,26 @@ func (m ArTUIModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 						break
 					}
 				}
-
+			case "ADDED":
+				cmd = m.List.InsertItem(len(m.List.Items())+1, appItem)
+				cmds = append(cmds, cmd)
 			default:
-				found := false
+				// update existing application
 				for i, v := range m.List.Items() {
 					if v.FilterValue() == msg.Event.Application.Name {
 						cmd = m.List.SetItem(i, appItem)
-						found = true
 						break
 					}
 				}
-				if !found {
-					cmd = m.List.InsertItem(len(m.List.Items())+1, appItem)
-				}
 				cmds = append(cmds, cmd)
-
-				markdown, err := m.renderTemplate("AppOverviewTemplate")
-				if err != nil {
-					log.Panicf("144: %s", err.Error())
-				}
-				m.Viewport.SetContent(markdown)
-				return m, tea.Batch(cmds...)
 			}
+
+			markdown, err := m.renderTemplate("AppOverviewTemplate")
+			if err != nil {
+				log.Panicf("144: %s", err.Error())
+			}
+			m.Viewport.SetContent(markdown)
+			return m, tea.Batch(cmds...)
 
 		case tea.KeyMsg:
 			log.Printf("KeyMsg recieved: %s ", msg.String())
