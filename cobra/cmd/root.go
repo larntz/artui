@@ -112,6 +112,8 @@ func Execute() {
 		panic(err)
 	}
 	// wait for workers to shutdown
+	log.Println("Shutting down workers...")
+	fmt.Println("Shutting down workers...")
 	cancel()
 	wg.Wait()
 	log.Println("Application Exit")

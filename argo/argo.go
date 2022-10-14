@@ -24,13 +24,14 @@ type Clients struct {
 }
 
 // Login performs user and password authentication
-func (client *Clients) Login(sr session.SessionCreateRequest) {
+func (client *Clients) Login(sr session.SessionCreateRequest) error {
 	log.Printf("ArgoLogin apiclient.NewClient")
 	client.SessionRequest = sr
 	argoClient, err := apiclient.NewClient(&client.ClientOptions)
 	if err != nil {
 		fmt.Printf("Error creating argocd client: %s", err.Error())
-		log.Fatalf("apiclient.NewClient err: %s", err)
+		return err
+		//log.Fatalf("apiclient.NewClient err: %s", err)
 	}
 
 	sessionCloser, sessionClient := argoClient.NewSessionClientOrDie()
@@ -54,6 +55,7 @@ func (client *Clients) Login(sr session.SessionCreateRequest) {
 		log.Fatalf("apiclient.NewClient err: %s", err)
 	}
 	log.Printf("ArgoLogin complete")
+	return nil
 }
 
 // WatchApplications watches an app for changes
@@ -63,7 +65,6 @@ func (client Clients) WatchApplications(ctx context.Context, wg *sync.WaitGroup,
 	if err != nil {
 		log.Fatalf("apiClient.NewApplicationClient err: %s", err)
 	}
-	defer appCloser.Close()
 
 	appWatcher, err := appClient.Watch(ctx, &application.ApplicationQuery{})
 	if err != nil {
@@ -75,6 +76,7 @@ func (client Clients) WatchApplications(ctx context.Context, wg *sync.WaitGroup,
 		select {
 
 		case <-ctx.Done():
+			appCloser.Close()
 			wg.Done()
 			log.Println("WatchApplication: ctx.Done()")
 			return
@@ -85,6 +87,20 @@ func (client Clients) WatchApplications(ctx context.Context, wg *sync.WaitGroup,
 
 			if err != nil {
 				log.Printf("WatchApplication err: %s", err)
+				log.Printf("Attempting to reconnect in 5 seconds...")
+				time.Sleep(5 * time.Second)
+				err = client.Login(client.SessionRequest)
+				if err != nil {
+					log.Printf("Argocd login failed...")
+				}
+				appCloser, appClient, err = client.APIClient.NewApplicationClient()
+				if err != nil {
+					log.Printf("apiClient.NewApplicationClient err: %s", err)
+				}
+				appWatcher, err = appClient.Watch(ctx, &application.ApplicationQuery{})
+				if err != nil {
+					log.Printf("appClientWatch err: %s", err)
+				}
 				// TODO: issue #16
 				// need to login again here, create all new clients.
 				// should probably be moved to functions.
@@ -100,11 +116,11 @@ func (client Clients) WatchApplications(ctx context.Context, wg *sync.WaitGroup,
 // ArgoWorker waits for commands from the ui
 func (client Clients) ArgoWorker(ctx context.Context, wg *sync.WaitGroup, ch <-chan models.WorkerCmd) {
 	log.Printf("starting ArgoWorker")
-	// appCloser, appClient, err := client.APIClient.NewApplicationClient()
-	// if err != nil {
-	// 	log.Fatalf("apiClient.NewApplicationClient err: %s", err)
-	// }
-	// defer appCloser.Close()
+	// 	appCloser, appClient, err := client.APIClient.NewApplicationClient()
+	// 	if err != nil {
+	// 		log.Fatalf("apiClient.NewApplicationClient err: %s", err)
+	// 	}
+	// 	defer appCloser.Close()
 
 	select {
 	case <-ctx.Done():

@@ -102,15 +102,22 @@ func (m ArTUIModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 					}
 				}
 			case "ADDED":
-				cmd = m.List.InsertItem(len(m.List.Items())+1, appItem)
-				cmds = append(cmds, cmd)
+				// Do nothing with Event.Type 'ADDED' because if
+				// the connection to argocd-server is broken and the watcher
+				// gets recreated all apps will send an ADDED event and
+				// that causes duplicates.
+				fallthrough
 			default:
-				// update existing application
+				found := false
 				for i, v := range m.List.Items() {
 					if v.FilterValue() == msg.Event.Application.Name {
 						cmd = m.List.SetItem(i, appItem)
+						found = true
 						break
 					}
+				}
+				if !found {
+					cmd = m.List.InsertItem(len(m.List.Items())+1, appItem)
 				}
 				cmds = append(cmds, cmd)
 			}
