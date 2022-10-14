@@ -46,6 +46,7 @@ type ArTUIModel struct {
 	LastAppRefresh  time.Time
 	RefreshDuration time.Duration
 	AppEventChan    <-chan AppEvent
+	AppWorkerChan   chan<- WorkerCmd
 }
 
 // Init the app model
@@ -93,9 +94,6 @@ func (m ArTUIModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 				ItemDescription: description,
 			}
 
-			// TODO
-			// currently we add the application if we get an event and it doesn't exist, but
-			// we need to detect delete events and them remove the application from the list.
 			switch msg.Event.Type {
 			case "DELETED":
 				for i, v := range m.List.Items() {
@@ -104,7 +102,12 @@ func (m ArTUIModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 						break
 					}
 				}
-
+			case "ADDED":
+				// Do nothing with Event.Type 'ADDED' because if
+				// the connection to argocd-server is broken and the watcher
+				// gets recreated all apps will send an ADDED event and
+				// that causes duplicates.
+				fallthrough
 			default:
 				found := false
 				for i, v := range m.List.Items() {
@@ -118,14 +121,14 @@ func (m ArTUIModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 					cmd = m.List.InsertItem(len(m.List.Items())+1, appItem)
 				}
 				cmds = append(cmds, cmd)
-
-				markdown, err := m.renderTemplate("AppOverviewTemplate")
-				if err != nil {
-					log.Panicf("144: %s", err.Error())
-				}
-				m.Viewport.SetContent(markdown)
-				return m, tea.Batch(cmds...)
 			}
+
+			markdown, err := m.renderTemplate("AppOverviewTemplate")
+			if err != nil {
+				log.Panicf("144: %s", err.Error())
+			}
+			m.Viewport.SetContent(markdown)
+			return m, tea.Batch(cmds...)
 
 		case tea.KeyMsg:
 			log.Printf("KeyMsg recieved: %s ", msg.String())

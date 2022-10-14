@@ -1,3 +1,4 @@
+// Package cmd handles config and app setup
 package cmd
 
 import (
@@ -86,29 +87,34 @@ func Execute() {
 	argoClient.Login(sessionRequest)
 
 	appEventChan := make(chan models.AppEvent, 250)
+	workerChan := make(chan models.WorkerCmd, 1)
 	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
 	wg := new(sync.WaitGroup)
-	wg.Add(1)
+	wg.Add(2)
 
 	log.Println("UI Start")
-	p := tea.NewProgram(ui.InitializeModel(Cluster, appEventChan), tea.WithAltScreen(), tea.WithMouseAllMotion())
+	p := tea.NewProgram(ui.InitializeModel(Cluster, appEventChan, workerChan), tea.WithAltScreen(), tea.WithMouseAllMotion())
 
 	go func() {
-		go argoClient.WatchApplication(ctx, wg, appEventChan)
+		go argoClient.ArgoWorker(ctx, wg, workerChan)
+		go argoClient.WatchApplications(ctx, wg, appEventChan)
 
 		for {
 			select {
 			case msg := <-appEventChan:
 				p.Send(msg)
 			}
-
 		}
 	}()
 
 	if err := p.Start(); err != nil {
 		panic(err)
 	}
+	// wait for workers to shutdown
+	log.Println("Shutting down workers...")
+	fmt.Println("Shutting down workers...")
+	cancel()
+	wg.Wait()
 	log.Println("Application Exit")
 }
 
@@ -199,6 +205,6 @@ func initConfig() {
 			sessionRequest.Password = password
 		}
 	} else {
-    fmt.Printf("configuration failed\n")
-  }
+		fmt.Printf("configuration failed\n")
+	}
 }

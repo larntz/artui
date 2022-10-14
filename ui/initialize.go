@@ -1,3 +1,4 @@
+// Package ui handles the tui and application state
 package ui
 
 import (
@@ -14,7 +15,7 @@ import (
 )
 
 // InitializeModel creates the initial model struct
-func InitializeModel(cluster string, appEvent <-chan models.AppEvent) models.ArTUIModel {
+func InitializeModel(cluster string, appEvent <-chan models.AppEvent, workerChan chan<- models.WorkerCmd) models.ArTUIModel {
 	appList := initAppList(v1alpha1.ApplicationList{})
 	appList.Title = cluster
 	textInput := initTextInput()
@@ -35,6 +36,7 @@ func InitializeModel(cluster string, appEvent <-chan models.AppEvent) models.ArT
 		LastAppRefresh:  time.Now(),
 		RefreshDuration: refreshDuration,
 		AppEventChan:    appEvent,
+		AppWorkerChan:   workerChan,
 	}
 }
 
