@@ -11,7 +11,6 @@ import (
 	"github.com/argoproj/argo-cd/v2/pkg/apiclient"
 	"github.com/argoproj/argo-cd/v2/pkg/apiclient/application"
 	"github.com/argoproj/argo-cd/v2/pkg/apiclient/session"
-	"github.com/argoproj/argo-cd/v2/pkg/apis/application/v1alpha1"
 	"github.com/larntz/artui/ui/models"
 )
 
@@ -157,21 +156,4 @@ func (client Clients) ArgoWorker(ctx context.Context, wg *sync.WaitGroup, ch <-c
 			}
 		}
 	}
-}
-
-// RefreshApplication checks for application updates, but does not sync unless autoSync is enabled on the application.
-func (client Clients) RefreshApplication(ctx context.Context, appClient application.ApplicationServiceClient, app v1alpha1.Application, hardRefresh bool) {
-	log.Printf("starting RefreshApplication")
-
-	refresh := fmt.Sprintf("%t", hardRefresh)
-	appQuery := application.ApplicationQuery{
-		Name:    &app.Name,
-		Refresh: &refresh,
-	}
-
-	returnedApp, err := appClient.Get(ctx, &appQuery)
-	if err != nil {
-		fmt.Printf("error getting application: %s", err.Error())
-	}
-	log.Printf("RefreshApplication: %v", returnedApp)
 }
