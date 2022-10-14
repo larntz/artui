@@ -4,10 +4,22 @@ This is a TUI app for interacting with ArgoCD and managing apps. It's in very ea
 
 image::screenshots/artui.png[]
 
+== Commands
+
+- `:r` refresh app
+- `:hr` hard refresh app
+- `:s` sync app
+- `:q` quit
+
+== Navigation
+
+- `j`,`k` up/down application list
+- up arrow, down arrow scroll application overview
+- `/` search application list
+
 == Compatility
 
 This is currently being developed against ArogCD version 2.4.x. 
-
 
 == Dependencies
 
