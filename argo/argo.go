@@ -17,14 +17,16 @@ import (
 
 // Clients holds argocd clients
 type Clients struct {
-	APIClient     apiclient.Client
-	SessionClient session.SessionServiceClient
-	ClientOptions apiclient.ClientOptions
+	APIClient      apiclient.Client
+	SessionClient  session.SessionServiceClient
+	ClientOptions  apiclient.ClientOptions
+	SessionRequest session.SessionCreateRequest
 }
 
 // Login performs user and password authentication
-func (client *Clients) Login(credentials session.SessionCreateRequest) {
+func (client *Clients) Login(sr session.SessionCreateRequest) {
 	log.Printf("ArgoLogin apiclient.NewClient")
+	client.SessionRequest = sr
 	argoClient, err := apiclient.NewClient(&client.ClientOptions)
 	if err != nil {
 		fmt.Printf("Error creating argocd client: %s", err.Error())
@@ -38,7 +40,7 @@ func (client *Clients) Login(credentials session.SessionCreateRequest) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Second*5))
 	log.Printf("created context.WithTimeout(5s), next step create session")
 	defer cancel()
-	session, err := sessionClient.Create(ctx, &credentials)
+	session, err := sessionClient.Create(ctx, &client.SessionRequest)
 	if err != nil {
 		fmt.Printf("Error creating session: %s", err.Error())
 		log.Fatalf("GetApplications sessionClient.create() error: %s", err)
@@ -56,7 +58,6 @@ func (client *Clients) Login(credentials session.SessionCreateRequest) {
 
 // WatchApplications watches an app for changes
 func (client Clients) WatchApplications(ctx context.Context, wg *sync.WaitGroup, ch chan<- models.AppEvent) {
-	defer wg.Done()
 	log.Printf("starting WatchApplication")
 	appCloser, appClient, err := client.APIClient.NewApplicationClient()
 	if err != nil {
@@ -74,6 +75,7 @@ func (client Clients) WatchApplications(ctx context.Context, wg *sync.WaitGroup,
 		select {
 
 		case <-ctx.Done():
+			wg.Done()
 			log.Println("WatchApplication: ctx.Done()")
 			return
 
@@ -97,7 +99,6 @@ func (client Clients) WatchApplications(ctx context.Context, wg *sync.WaitGroup,
 
 // ArgoWorker waits for commands from the ui
 func (client Clients) ArgoWorker(ctx context.Context, wg *sync.WaitGroup, ch <-chan models.WorkerCmd) {
-	defer wg.Done()
 	log.Printf("starting ArgoWorker")
 	// appCloser, appClient, err := client.APIClient.NewApplicationClient()
 	// if err != nil {
@@ -106,17 +107,20 @@ func (client Clients) ArgoWorker(ctx context.Context, wg *sync.WaitGroup, ch <-c
 	// defer appCloser.Close()
 
 	select {
-	// wait for commands and then do some stuff here.
-	/*
-	   // not sure yet if I should send appClient on a
-	   goroutine or have the function create a new client.
-	       case refresh:
-	         go RefreshApplication(appClient, app)
-	       case hardRefresh:
-	         go RefreshAPplicatin(appClient, app,hard=true)
-	       case Sync:
-	         go SyncAplication(appClient, app)
-	*/
+	case <-ctx.Done():
+		wg.Done()
+
+		// wait for commands and then do some stuff here.
+		/*
+		   // not sure yet if I should send appClient on a
+		   goroutine or have the function create a new client.
+		       case refresh:
+		         go RefreshApplication(appClient, app)
+		       case hardRefresh:
+		         go RefreshAPplicatin(appClient, app,hard=true)
+		       case Sync:
+		         go SyncAplication(appClient, app)
+		*/
 	}
 }
 

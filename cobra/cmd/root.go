@@ -89,7 +89,6 @@ func Execute() {
 	appEventChan := make(chan models.AppEvent, 250)
 	workerChan := make(chan models.WorkerCmd, 1)
 	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
 	wg := new(sync.WaitGroup)
 	wg.Add(2)
 
@@ -112,6 +111,9 @@ func Execute() {
 	if err := p.Start(); err != nil {
 		panic(err)
 	}
+	// wait for workers to shutdown
+	cancel()
+	wg.Wait()
 	log.Println("Application Exit")
 }
 
