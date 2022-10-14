@@ -31,7 +31,6 @@ func (client *Clients) Login(sr session.SessionCreateRequest) error {
 	if err != nil {
 		fmt.Printf("Error creating argocd client: %s", err.Error())
 		return err
-		//log.Fatalf("apiclient.NewClient err: %s", err)
 	}
 
 	sessionCloser, sessionClient := argoClient.NewSessionClientOrDie()
@@ -87,6 +86,11 @@ func (client Clients) WatchApplications(ctx context.Context, wg *sync.WaitGroup,
 
 			if err != nil {
 				log.Printf("WatchApplication err: %s", err)
+				if ctx.Err() != nil {
+					wg.Done()
+					log.Println("WatchApplication: ctx.Done()")
+					return
+				}
 				log.Printf("Attempting to reconnect in 5 seconds...")
 				time.Sleep(5 * time.Second)
 				err = client.Login(client.SessionRequest)
@@ -101,10 +105,6 @@ func (client Clients) WatchApplications(ctx context.Context, wg *sync.WaitGroup,
 				if err != nil {
 					log.Printf("appClientWatch err: %s", err)
 				}
-				// TODO: issue #16
-				// need to login again here, create all new clients.
-				// should probably be moved to functions.
-				// need to save credentials passed to the Login function or re-read somehow
 			} else {
 				log.Printf("WatchApplication sending %s: %s", event.Application.Name, event.Type)
 				ch <- models.AppEvent{Event: *event}
@@ -116,27 +116,46 @@ func (client Clients) WatchApplications(ctx context.Context, wg *sync.WaitGroup,
 // ArgoWorker waits for commands from the ui
 func (client Clients) ArgoWorker(ctx context.Context, wg *sync.WaitGroup, ch <-chan models.WorkerCmd) {
 	log.Printf("starting ArgoWorker")
-	// 	appCloser, appClient, err := client.APIClient.NewApplicationClient()
-	// 	if err != nil {
-	// 		log.Fatalf("apiClient.NewApplicationClient err: %s", err)
-	// 	}
-	// 	defer appCloser.Close()
+	appCloser, appClient, err := client.APIClient.NewApplicationClient()
+	if err != nil {
+		log.Fatalf("apiClient.NewApplicationClient err: %s", err)
+	}
+	defer appCloser.Close()
 
-	select {
-	case <-ctx.Done():
-		wg.Done()
+	for {
+		select {
+		case <-ctx.Done():
+			wg.Done()
+			appCloser.Close()
+			log.Println("ArgoWorker: ctx.Done()")
+			return
+		case command := <-ch:
+			switch {
+			case command.Cmd == models.Refresh:
+				log.Printf("ArgoWorker received Refresh command for app: %s", command.App.Name)
+				refresh := "false"
+				appClient.Get(context.TODO(), &application.ApplicationQuery{
+					Name:    &command.App.Name,
+					Refresh: &refresh,
+				})
 
-		// wait for commands and then do some stuff here.
-		/*
-		   // not sure yet if I should send appClient on a
-		   goroutine or have the function create a new client.
-		       case refresh:
-		         go RefreshApplication(appClient, app)
-		       case hardRefresh:
-		         go RefreshAPplicatin(appClient, app,hard=true)
-		       case Sync:
-		         go SyncAplication(appClient, app)
-		*/
+			case command.Cmd == models.HardRefresh:
+				log.Printf("ArgoWorker received HardRefresh command for app: %s", command.App.Name)
+				refresh := "true"
+				appClient.Get(context.TODO(), &application.ApplicationQuery{
+					Name:    &command.App.Name,
+					Refresh: &refresh,
+				})
+			case command.Cmd == models.Sync:
+				log.Printf("ArgoWorker received Sync command for app: %s", command.App.Name)
+				appClient.Sync(context.TODO(), &application.ApplicationSyncRequest{
+					Name:  &command.App.Name,
+					Prune: true,
+				})
+			default:
+				log.Printf("ArgoWorker received unknown command for app: %s", command.App.Name)
+			}
+		}
 	}
 }
 

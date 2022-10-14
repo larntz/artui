@@ -46,6 +46,7 @@ type ArTUIModel struct {
 	LastAppRefresh  time.Time
 	RefreshDuration time.Duration
 	AppEventChan    <-chan AppEvent
+	AppWorkerChan   chan<- WorkerCmd
 }
 
 // Init the app model

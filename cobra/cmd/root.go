@@ -93,7 +93,7 @@ func Execute() {
 	wg.Add(2)
 
 	log.Println("UI Start")
-	p := tea.NewProgram(ui.InitializeModel(Cluster, appEventChan), tea.WithAltScreen(), tea.WithMouseAllMotion())
+	p := tea.NewProgram(ui.InitializeModel(Cluster, appEventChan, workerChan), tea.WithAltScreen(), tea.WithMouseAllMotion())
 
 	go func() {
 		go argoClient.ArgoWorker(ctx, wg, workerChan)
@@ -104,7 +104,6 @@ func Execute() {
 			case msg := <-appEventChan:
 				p.Send(msg)
 			}
-
 		}
 	}()
 
