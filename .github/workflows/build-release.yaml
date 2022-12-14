@@ -1,8 +1,8 @@
 name: build 
 on: 
   push:
-    tags-ignore:
-      - 'v*'
+    branches-ignore:
+      - main
 
 jobs:
   # add job for golangci-lint
