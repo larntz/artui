@@ -5,12 +5,15 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
 	"sync"
 	"time"
 
 	"github.com/argoproj/argo-cd/v2/pkg/apiclient"
 	"github.com/argoproj/argo-cd/v2/pkg/apiclient/application"
 	"github.com/argoproj/argo-cd/v2/pkg/apiclient/session"
+
+	"github.com/larntz/artui/argo/headless"
 	"github.com/larntz/artui/ui/models"
 )
 
@@ -25,34 +28,50 @@ type Clients struct {
 // Login performs user and password authentication
 func (client *Clients) Login(sr session.SessionCreateRequest) error {
 	log.Printf("ArgoLogin apiclient.NewClient")
-	client.SessionRequest = sr
-	argoClient, err := apiclient.NewClient(&client.ClientOptions)
-	if err != nil {
-		fmt.Printf("Error creating argocd client: %s", err.Error())
-		return err
-	}
 
-	sessionCloser, sessionClient := argoClient.NewSessionClientOrDie()
-	client.SessionClient = sessionClient
-	defer sessionCloser.Close()
+	if !client.ClientOptions.Core {
+		// credentialed login
+		fmt.Printf("Starting credentialed login...\n")
+		client.SessionRequest = sr
+		argoClient, err := apiclient.NewClient(&client.ClientOptions)
+		if err != nil {
+			fmt.Printf("Failed to create api client: %s\n", err)
+			fmt.Printf("clientOptions: %+v\n\n", client.ClientOptions)
+			os.Exit(1)
+		}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Second*5))
-	log.Printf("created context.WithTimeout(5s), next step create session")
-	defer cancel()
-	session, err := sessionClient.Create(ctx, &client.SessionRequest)
-	if err != nil {
-		fmt.Printf("Error creating session: %s", err.Error())
-		log.Fatalf("GetApplications sessionClient.create() error: %s", err)
-	}
-	client.ClientOptions.AuthToken = session.Token
+		sessionCloser, sessionClient, err := argoClient.NewSessionClient()
+		if err != nil {
+			fmt.Printf("Failed to create session client: %s", err)
+			fmt.Printf("clientOptions: %+v\n\n", client.ClientOptions)
+			os.Exit(1)
+		}
+		client.SessionClient = sessionClient
+		defer sessionCloser.Close()
 
-	log.Printf("starting NewClient with session.Token")
-	client.APIClient, err = apiclient.NewClient(&client.ClientOptions)
-	if err != nil {
-		fmt.Printf("Error api client: %s", err.Error())
-		log.Fatalf("apiclient.NewClient err: %s", err)
+		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Second*5))
+		log.Printf("created context.WithTimeout(5s), next step create session")
+		defer cancel()
+		session, err := sessionClient.Create(ctx, &client.SessionRequest)
+		if err != nil {
+			fmt.Printf("Error creating session: %s", err.Error())
+			log.Fatalf("GetApplications sessionClient.create() error: %s", err)
+		}
+		fmt.Println("SessionCreate succesful")
+		client.ClientOptions.AuthToken = session.Token
+
+		log.Printf("starting NewClient with session.Token")
+		client.APIClient, err = apiclient.NewClient(&client.ClientOptions)
+		if err != nil {
+			fmt.Printf("Error api client: %s", err.Error())
+			log.Fatalf("apiclient.NewClient err: %s", err)
+		}
+		log.Printf("ArgoLogin/Server complete")
+	} else {
+		// core login
+		client.APIClient = headless.NewClientOrDie(&client.ClientOptions)
+		log.Printf("ArgoLogin/Core complete (headless url: %s", client.APIClient.ClientOptions().ServerAddr)
 	}
-	log.Printf("ArgoLogin complete")
 	return nil
 }
 
@@ -146,10 +165,11 @@ func (client Clients) ArgoWorker(ctx context.Context, wg *sync.WaitGroup, ch <-c
 					Refresh: &refresh,
 				})
 			case command.Cmd == models.Sync:
+				prune := true
 				log.Printf("ArgoWorker received Sync command for app: %s", command.App.Name)
 				appClient.Sync(context.TODO(), &application.ApplicationSyncRequest{
 					Name:  &command.App.Name,
-					Prune: true,
+					Prune: &prune,
 				})
 			default:
 				log.Printf("ArgoWorker received unknown command for app: %s", command.App.Name)

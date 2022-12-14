@@ -15,6 +15,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"k8s.io/client-go/tools/clientcmd"
+	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 
 	"github.com/larntz/artui/argo"
 	"github.com/larntz/artui/ui"
@@ -22,23 +23,14 @@ import (
 )
 
 var cfgFile string
+var cfgContext string
 
-// Cluster gets set to current kubeconfig context
+// Cluster gets set to current kubeconfig context if using core, otherwise it's set to config-context
 var Cluster string
 
-var argocdClientOptions = apiclient.ClientOptions{
-	ServerAddr:           "port-forward",
-	Insecure:             false,
-	PlainText:            true,
-	UserAgent:            "ArTUI 0.0.1",
-	PortForward:          true,
-	PortForwardNamespace: "",
-}
+var argocdClientOptions = apiclient.ClientOptions{}
 
-var sessionRequest = session.SessionCreateRequest{
-	Username: "",
-	Password: "",
-}
+var sessionRequest = session.SessionCreateRequest{}
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -126,10 +118,11 @@ func init() {
 	// will be global for your application.
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/config/artui/config.yaml)")
+	rootCmd.PersistentFlags().StringVar(&cfgContext, "config-context", "default", "config file context")
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
-	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	// rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -141,7 +134,6 @@ func initConfig() {
 	kubeConfigPath += "/.kube/config"
 	config := clientcmd.GetConfigFromFileOrDie(kubeConfigPath)
 	fmt.Printf("Current kube context: %s\n", config.CurrentContext)
-	Cluster = config.CurrentContext
 	artuiConfigPrefix := "argocd.contexts." + config.CurrentContext + "."
 
 	if cfgFile != "" {
@@ -153,7 +145,6 @@ func initConfig() {
 		cobra.CheckErr(err)
 		config = filepath.Join(config, "artui")
 
-		// Search config in home directory with name ".cobra" (without extension).
 		viper.AddConfigPath(config)
 		viper.SetConfigType("yaml")
 		viper.SetConfigName("config.yaml")
@@ -167,44 +158,65 @@ func initConfig() {
 		fmt.Fprintln(os.Stderr, "Using config file:", viper.ConfigFileUsed())
 
 		// check if config has k8s context specific settings
-		if !viper.IsSet(artuiConfigPrefix + "username") {
-			// change prefix to use default config options
-			fmt.Printf("Changing config context to default (%s not found)\n", config.CurrentContext)
+		if cfgContext != "default" {
+			artuiConfigPrefix = "argocd.contexts." + cfgContext + "."
+			Cluster = cfgContext
+			fmt.Printf("Using config context %s\n", artuiConfigPrefix)
+		} else {
 			artuiConfigPrefix = "argocd.default."
-		}
-
-		if host := viper.GetString(artuiConfigPrefix + "host"); host == "" {
-			fmt.Println("Unable to get argocd host configuration.")
-			// os.Exit(1)
-		} else {
-			argocdClientOptions.ServerAddr = host
-		}
-
-		if ns := viper.GetString(artuiConfigPrefix + "namespace"); ns == "" {
-			fmt.Println("Unable to get argocd ns configuration.")
-			os.Exit(1)
-		} else {
-			argocdClientOptions.PortForwardNamespace = ns
+			Cluster = config.CurrentContext
+			fmt.Printf("Using config context %s\n", artuiConfigPrefix)
 		}
 
 		argocdClientOptions.PortForward = viper.GetBool(artuiConfigPrefix + "port-forward")
 		argocdClientOptions.Insecure = viper.GetBool(artuiConfigPrefix + "insecure")
 		argocdClientOptions.PlainText = viper.GetBool(artuiConfigPrefix + "plaintext")
+		argocdClientOptions.GRPCWeb = viper.GetBool(artuiConfigPrefix + "grpcweb")
+		argocdClientOptions.Core = viper.GetBool(artuiConfigPrefix + "core")
 
-		if user := viper.GetString(artuiConfigPrefix + "username"); user == "" {
-			fmt.Println("Unable to get argocd user configuration.")
-			os.Exit(1)
+		if argoNs := viper.GetString(artuiConfigPrefix + "argocdNamespace"); argoNs == "" {
+			fmt.Println("Nothing set for ArgoCD Namespace.")
 		} else {
-			sessionRequest.Username = user
+			context := clientcmdapi.Context{
+				Namespace: argoNs,
+			}
+			configOverrides := clientcmd.ConfigOverrides{
+				Context: context,
+			}
+			argocdClientOptions.KubeOverrides = &configOverrides
 		}
 
-		if password := viper.GetString("password"); password == "" {
-			fmt.Println("Unable to get password. Did you set the env variable ARTUI_PASSWORD?")
-			os.Exit(1)
-		} else {
-			sessionRequest.Password = password
+		if argocdClientOptions.PortForward {
+			if ns := viper.GetString(artuiConfigPrefix + "namespace"); ns == "" {
+				fmt.Println("Unable to get port-forward namespace configuration. Using 'argocd'.")
+				argocdClientOptions.PortForwardNamespace = "argocd"
+			} else {
+				argocdClientOptions.PortForwardNamespace = ns
+			}
 		}
-	} else {
-		fmt.Printf("configuration failed\n")
+
+		if !argocdClientOptions.Core {
+			// only need these if we're not using Core
+			if host := viper.GetString(artuiConfigPrefix + "host"); host == "" {
+				fmt.Println("Unable to get argocd host configuration.")
+				os.Exit(1)
+			} else {
+				argocdClientOptions.ServerAddr = host
+			}
+
+			if user := viper.GetString(artuiConfigPrefix + "username"); user == "" {
+				fmt.Println("Unable to get argocd user configuration.")
+				os.Exit(1)
+			} else {
+				sessionRequest.Username = user
+			}
+
+			if password := viper.GetString("password"); password == "" {
+				fmt.Println("Unable to get password. Try setting env ARTUI_PASSWORD")
+				os.Exit(1)
+			} else {
+				sessionRequest.Password = password
+			}
+		}
 	}
 }
