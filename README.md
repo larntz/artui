@@ -6,7 +6,7 @@
 
 This is a TUI app for interacting with ArgoCD and managing apps. It's in very early stages and basically just a toy project that I may someday spend more time finishing...
 
-[!screenshot](screenshots/artui.png)
+![screenshot](screenshots/artui.png)
 
 ## Commands
 
