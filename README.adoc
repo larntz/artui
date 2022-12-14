@@ -1,5 +1,9 @@
 = ArTUI
 
+== status
+
+[![build](https://github.com/larntz/artui/actions/workflows/build-release.yaml/badge.svg)](https://github.com/larntz/artui/actions/workflows/build-release.yaml)
+
 This is a TUI app for interacting with ArgoCD and managing apps. It's in very early stages and basically just a toy project that I may someday spend more time finishing...
 
 image::screenshots/artui.png[]

@@ -1,5 +1,8 @@
-name: build and release artui
-on: push
+name: build 
+on: 
+  push:
+    tags-ignore:
+      - 'v*'
 
 jobs:
   # add job for golangci-lint
