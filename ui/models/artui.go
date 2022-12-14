@@ -2,7 +2,6 @@ package models
 
 import (
 	"bytes"
-	"fmt"
 	"log"
 	"strings"
 	"text/template"
@@ -196,7 +195,7 @@ func (m ArTUIModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m ArTUIModel) headerView() string {
-	title := fmt.Sprintf(" ArTUI: Managing ArgoCD Apps")
+	title := " ArTUI: Managing ArgoCD Apps"
 	line := strings.Repeat(" ", utils.Max(0, m.WindowWidth-lipgloss.Width(styles.HeaderStyle.Render(title))))
 
 	return styles.HeaderStyle.Render(lipgloss.JoinHorizontal(lipgloss.Center, title, line))
@@ -204,7 +203,7 @@ func (m ArTUIModel) headerView() string {
 
 func (m ArTUIModel) footerView() string {
 	textInput := m.Textinput.View()
-	message := fmt.Sprintf("https://github.com/larntz/artui")
+	message := "https://github.com/larntz/artui"
 	line := strings.Repeat(" ", utils.Max(0,
 		m.WindowWidth-lipgloss.Width(styles.FooterStyle.Render(message))-lipgloss.Width(styles.FooterStyle.Render(textInput))))
 

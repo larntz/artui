@@ -1,11 +1,5 @@
 package models
 
-import (
-	"log"
-
-	"github.com/charmbracelet/bubbles/list"
-)
-
 // AppListItem is used as bubbletea list.Items
 type AppListItem struct {
 	Name            string
@@ -21,20 +15,21 @@ func (a AppListItem) FilterValue() string { return a.Name }
 // Description returns the ItemDescription
 func (a AppListItem) Description() string { return a.ItemDescription }
 
+// TODO remove this stuff
 // Return a new appList full of AppListItems
-func (m *ArTUIModel) updateAppList() []list.Item {
-	log.Printf("updateAppList: got %d apps", len(m.Applications.Items))
-	var appListItems []list.Item
-	for _, app := range m.Applications.Items {
-		description := string(app.Status.Health.Status) + "/" + string(app.Status.Sync.Status)
-		appListItems = append(appListItems, AppListItem{
-			Name:            app.Name,
-			ItemDescription: description,
-		})
-	}
-
-	return appListItems
-}
+// func (m *ArTUIModel) updateAppList() []list.Item {
+// 	log.Printf("updateAppList: got %d apps", len(m.Applications.Items))
+// 	var appListItems []list.Item
+// 	for _, app := range m.Applications.Items {
+// 		description := string(app.Status.Health.Status) + "/" + string(app.Status.Sync.Status)
+// 		appListItems = append(appListItems, AppListItem{
+// 			Name:            app.Name,
+// 			ItemDescription: description,
+// 		})
+// 	}
+//
+// 	return appListItems
+// }
 
 // func (m ArTUIModel) updateAppList() list.Model {
 // 	log.Printf("updateAppList: got %d apps", len(m.Applications.Items))
