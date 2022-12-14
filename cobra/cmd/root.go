@@ -28,7 +28,12 @@ var cfgContext string
 // Cluster gets set to current kubeconfig context if using core, otherwise it's set to config-context
 var Cluster string
 
-var argocdClientOptions = apiclient.ClientOptions{}
+var argocdClientOptions = apiclient.ClientOptions{
+	ServerAddr:  "kubernetes",
+	Core:        true,
+	PlainText:   true,
+	PortForward: false,
+}
 
 var sessionRequest = session.SessionCreateRequest{}
 
@@ -218,5 +223,16 @@ func initConfig() {
 				sessionRequest.Password = password
 			}
 		}
+	} else {
+		// set KubeOverrides namespace to 'argocd'
+		context := clientcmdapi.Context{
+			Namespace: "argocd",
+		}
+		configOverrides := clientcmd.ConfigOverrides{
+			Context: context,
+		}
+		argocdClientOptions.KubeOverrides = &configOverrides
+		// use current kubeconfig contxt as cluster name
+		Cluster = config.CurrentContext
 	}
 }
