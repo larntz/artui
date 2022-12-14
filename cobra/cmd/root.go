@@ -81,7 +81,9 @@ func Execute() {
 	argoClient := argo.Clients{
 		ClientOptions: argocdClientOptions,
 	}
-	argoClient.Login(sessionRequest)
+	if err := argoClient.Login(sessionRequest); err != nil {
+		log.Fatalf("argoClient.Login failed: %s", err)
+	}
 
 	appEventChan := make(chan models.AppEvent, 250)
 	workerChan := make(chan models.WorkerCmd, 1)
@@ -139,7 +141,8 @@ func initConfig() {
 	kubeConfigPath += "/.kube/config"
 	config := clientcmd.GetConfigFromFileOrDie(kubeConfigPath)
 	fmt.Printf("Current kube context: %s\n", config.CurrentContext)
-	artuiConfigPrefix := "argocd.contexts." + config.CurrentContext + "."
+	// artuiConfigPrefix := "argocd.contexts." + config.CurrentContext + "."
+	var artuiConfigPrefix string
 
 	if cfgFile != "" {
 		// Use config file from the flag.

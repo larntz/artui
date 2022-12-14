@@ -152,25 +152,36 @@ func (client Clients) ArgoWorker(ctx context.Context, wg *sync.WaitGroup, ch <-c
 			case command.Cmd == models.Refresh:
 				log.Printf("ArgoWorker received Refresh command for app: %s", command.App.Name)
 				refresh := "false"
-				appClient.Get(context.TODO(), &application.ApplicationQuery{
+				_, err := appClient.Get(context.TODO(), &application.ApplicationQuery{
 					Name:    &command.App.Name,
 					Refresh: &refresh,
 				})
+				if err != nil {
+					log.Fatalf("appClient.Get failed: %s", err)
+				}
 
 			case command.Cmd == models.HardRefresh:
 				log.Printf("ArgoWorker received HardRefresh command for app: %s", command.App.Name)
 				refresh := "true"
-				appClient.Get(context.TODO(), &application.ApplicationQuery{
+				_, err := appClient.Get(context.TODO(), &application.ApplicationQuery{
 					Name:    &command.App.Name,
 					Refresh: &refresh,
 				})
+				if err != nil {
+					log.Fatalf("appClient.Get failed: %s", err)
+				}
+
 			case command.Cmd == models.Sync:
 				prune := true
 				log.Printf("ArgoWorker received Sync command for app: %s", command.App.Name)
-				appClient.Sync(context.TODO(), &application.ApplicationSyncRequest{
+				_, err := appClient.Sync(context.TODO(), &application.ApplicationSyncRequest{
 					Name:  &command.App.Name,
 					Prune: &prune,
 				})
+				if err != nil {
+					log.Fatalf("appClient.Sync failed: %s", err)
+				}
+
 			default:
 				log.Printf("ArgoWorker received unknown command for app: %s", command.App.Name)
 			}
