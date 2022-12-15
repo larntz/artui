@@ -4,7 +4,7 @@
 
 ## Overview 
 
-This is a TUI app for interacting with ArgoCD and managing apps. It's in very early stages and basically just a toy project that I may someday spend more time finishing...
+This is a TUI app for interacting with ArgoCD and managing apps.
 
 ![screenshot](screenshots/artui.png)
 
@@ -23,8 +23,10 @@ This is a TUI app for interacting with ArgoCD and managing apps. It's in very ea
 
 ## Compatility
 
-This is currently being developed against ArogCD version 2.4.x. 
+This is currently being developed against ArogCD version 2.5.x. 
 
 ## Dependencies
 
-To setup dependencies use the replace() block from the https://github.com/argoproj/argo-cd/blob/master/go.mod[argocd project `go.mod`] file. Then run `go mod tidy -compat=1.1.7`.
+Go v1.18.5.
+
+To setup dependencies use the replace() block from the [argocd project `go.mod`](https://github.com/argoproj/argo-cd/blob/master/go.mod) file. Then run `go mod tidy`.
