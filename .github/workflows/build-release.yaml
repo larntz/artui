@@ -31,6 +31,5 @@ jobs:
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
           prerelease: true
-          title: "Release ${{ GITHUB_REF_NAME }}"
           files: |
             artui-linux-amd64
