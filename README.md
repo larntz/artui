@@ -1,6 +1,7 @@
 # ArTUI
 
 [![build](https://github.com/larntz/artui/actions/workflows/build-release.yaml/badge.svg)](https://github.com/larntz/artui/actions/workflows/build-release.yaml)
+[![build](https://github.com/larntz/artui/actions/workflows/build.yaml/badge.svg)](https://github.com/larntz/artui/actions/workflows/build.yaml)
 
 ## Overview 
 
