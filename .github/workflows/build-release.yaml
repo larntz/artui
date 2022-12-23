@@ -5,7 +5,6 @@ on:
       - main
 
 jobs:
-  # TODO add job for golangci-lint
   build:
     runs-on: ubuntu-latest
     steps:
@@ -17,5 +16,10 @@ jobs:
       - name: checkout code
         uses: actions/checkout@v3
 
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v3
+
       - name: build
-        run: go build -o ~/release/artui-linux-amd64
+        env:
+          date: ${{ steps.date.outputs.date }}
+        run: go build -ldflags "-X github.com/larntz/artui/cobra/cmd.version=$GITHUB_REF_NAME -X github.com/larntz/artui/cobra/cmd.date=$date -X github.com/larntz/artui/cobra/cmd.hash=$GITHUB_SHA" -o ~/release/artui-linux-amd64
