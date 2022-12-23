@@ -24,6 +24,4 @@ jobs:
           args: --timeout 5m
 
       - name: build
-        env:
-          date: ${{ steps.date.outputs.date }}
         run: go build -o ~/release/artui-linux-amd64

@@ -23,5 +23,5 @@ jobs:
 
       - name: build
         env:
-          date: ${{ steps.date.outputs.date }}
+          date: ${{ github.event.repository.updated_at}}
         run: go build -ldflags "-X github.com/larntz/artui/cobra/cmd.version=$GITHUB_REF_NAME -X github.com/larntz/artui/cobra/cmd.date=$date -X github.com/larntz/artui/cobra/cmd.hash=$GITHUB_SHA" -o ~/release/artui-linux-amd64
