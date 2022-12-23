@@ -35,7 +35,7 @@ jobs:
       - name: release
         uses: "marvinpinto/action-automatic-releases@latest"
         env: 
-          release: "${{ GITHUB_REF_NAME }}"
+          release: "${{ github.GITHUB_REF_NAME }}"
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
           prerelease: true
