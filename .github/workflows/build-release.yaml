@@ -1,10 +1,11 @@
 name: build-release 
 on: 
   push:
-    branches-ignore:
-      - main
+    branches:
+      - '!main'
+      - '*'
     tags: 
-      - v*
+      - 'v*'
 
 jobs:
   build:
