@@ -1,9 +1,6 @@
 name: build-release 
 on: 
   push:
-    branches:
-      - '!main'
-      - '*'
     tags: 
       - 'v*'
 
