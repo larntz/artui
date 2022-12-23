@@ -26,10 +26,14 @@ jobs:
           date: ${{ github.event.repository.updated_at }}
         run: go build -ldflags "-X github.com/larntz/artui/cobra/cmd.version=$GITHUB_REF_NAME -X github.com/larntz/artui/cobra/cmd.date=$date -X github.com/larntz/artui/cobra/cmd.hash=$GITHUB_SHA" -o artui-linux-amd64
 
+      - name: tar gzip
+        run: tar -czf artui-linux-amd64.tar.gz LICENSE.md artui-linux-amd64
+
       - name: release
         uses: "marvinpinto/action-automatic-releases@latest"
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
           prerelease: true
+          title: "Release ${{ github.GITHUB_REF_NAME }}"
           files: |
-            artui-linux-amd64
+            artui-linux-amd64.tar.gz
