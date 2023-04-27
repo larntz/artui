@@ -32,8 +32,14 @@ func handleWindowSizeMsg(m ArTUIModel, message tea.WindowSizeMsg) (tea.Model, te
 		m.Viewport.MouseWheelEnabled = true
 
 		var err error
+		var style glamour.TermRendererOption
+		if m.DarkMode {
+			style = glamour.WithStandardStyle("dark")
+		} else {
+			style = glamour.WithStandardStyle("light")
+		}
 		m.Glamour, err = glamour.NewTermRenderer(
-			glamour.WithAutoStyle(),
+			style,
 			glamour.WithWordWrap(m.Viewport.Width-5))
 		if err != nil {
 			log.Panicf("glamour problem: %s", err.Error())
@@ -60,8 +66,14 @@ func handleWindowSizeMsg(m ArTUIModel, message tea.WindowSizeMsg) (tea.Model, te
 		cmds = append(cmds, cmd)
 
 		var err error
+		var style glamour.TermRendererOption
+		if m.DarkMode {
+			style = glamour.WithStandardStyle("dark")
+		} else {
+			style = glamour.WithStandardStyle("light")
+		}
 		m.Glamour, err = glamour.NewTermRenderer(
-			glamour.WithAutoStyle(),
+			style,
 			glamour.WithWordWrap(m.Viewport.Width-5))
 		if err != nil {
 			log.Panicf("glamour problem: %s", err.Error())

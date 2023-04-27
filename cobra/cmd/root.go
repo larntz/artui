@@ -24,6 +24,7 @@ import (
 var cfgFile string
 var cfgContext string
 var cfgHelp bool
+var darkMode bool
 
 // Cluster gets set to current kubeconfig context if using core, otherwise it's set to config-context
 var Cluster string
@@ -77,7 +78,7 @@ var rootCmd = &cobra.Command{
 		wg.Add(2)
 
 		log.Println("UI Start")
-		p := tea.NewProgram(ui.InitializeModel(Cluster, appEventChan, workerChan), tea.WithAltScreen(), tea.WithMouseAllMotion())
+		p := tea.NewProgram(ui.InitializeModel(Cluster, appEventChan, workerChan, darkMode), tea.WithAltScreen(), tea.WithMouseAllMotion())
 
 		go func() {
 			go argoClient.ArgoWorker(ctx, wg, workerChan)
@@ -119,9 +120,10 @@ func init() {
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/config/artui/config.yaml)")
-	rootCmd.PersistentFlags().StringVar(&cfgContext, "config-context", "default", "config file context")
-	rootCmd.PersistentFlags().BoolVarP(&cfgHelp, "help", "h", false, "get help")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "Config file (default is $HOME/config/artui/config.yaml).")
+	rootCmd.PersistentFlags().StringVar(&cfgContext, "config-context", "default", "Config file context.")
+	rootCmd.PersistentFlags().BoolVarP(&darkMode, "dark", "d", false, "Set dark mode.")
+	rootCmd.PersistentFlags().BoolVarP(&cfgHelp, "help", "h", false, "Get help.")
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
@@ -200,26 +202,26 @@ func initConfig() {
 
 		if !argocdClientOptions.Core {
 			// only need these if we're not using Core
-			if host := viper.GetString(artuiConfigPrefix + "host"); host == "" {
+			var host string
+			if host = viper.GetString(artuiConfigPrefix + "host"); host == "" {
 				fmt.Println("Unable to get argocd host configuration.")
 				os.Exit(1)
-			} else {
-				argocdClientOptions.ServerAddr = host
 			}
+			argocdClientOptions.ServerAddr = host
 
-			if user := viper.GetString(artuiConfigPrefix + "username"); user == "" {
+			var user string
+			if user = viper.GetString(artuiConfigPrefix + "username"); user == "" {
 				fmt.Println("Unable to get argocd user configuration.")
 				os.Exit(1)
-			} else {
-				sessionRequest.Username = user
 			}
+			sessionRequest.Username = user
 
-			if password := viper.GetString("password"); password == "" {
+			var password string
+			if password = viper.GetString("password"); password == "" {
 				fmt.Println("Unable to get password. Try setting env ARTUI_PASSWORD")
 				os.Exit(1)
-			} else {
-				sessionRequest.Password = password
 			}
+			sessionRequest.Password = password
 		}
 	} else {
 		// set KubeOverrides namespace to 'argocd'
