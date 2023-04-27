@@ -15,7 +15,7 @@ import (
 )
 
 // InitializeModel creates the initial model struct
-func InitializeModel(cluster string, appEvent <-chan models.AppEvent, workerChan chan<- models.WorkerCmd) models.ArTUIModel {
+func InitializeModel(cluster string, appEvent <-chan models.AppEvent, workerChan chan<- models.WorkerCmd, darkMode bool) models.ArTUIModel {
 	appList := initAppList(v1alpha1.ApplicationList{})
 	appList.Title = cluster
 	textInput := initTextInput()
@@ -37,6 +37,7 @@ func InitializeModel(cluster string, appEvent <-chan models.AppEvent, workerChan
 		RefreshDuration: refreshDuration,
 		AppEventChan:    appEvent,
 		AppWorkerChan:   workerChan,
+		DarkMode:        darkMode,
 	}
 }
 

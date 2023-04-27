@@ -46,6 +46,7 @@ type ArTUIModel struct {
 	RefreshDuration time.Duration
 	AppEventChan    <-chan AppEvent
 	AppWorkerChan   chan<- WorkerCmd
+	DarkMode        bool
 }
 
 // Init the app model
@@ -198,15 +199,24 @@ func (m ArTUIModel) headerView() string {
 	title := " ArTUI: Managing ArgoCD Apps"
 	line := strings.Repeat(" ", utils.Max(0, m.WindowWidth-lipgloss.Width(styles.HeaderStyle.Render(title))))
 
+	if m.DarkMode {
+		return styles.HeaderStyleDark.Render(lipgloss.JoinHorizontal(lipgloss.Center, title, line))
+	}
 	return styles.HeaderStyle.Render(lipgloss.JoinHorizontal(lipgloss.Center, title, line))
 }
 
 func (m ArTUIModel) footerView() string {
 	textInput := m.Textinput.View()
 	message := "https://github.com/larntz/artui"
+
+	if m.DarkMode {
+		line := strings.Repeat(" ", utils.Max(0,
+			m.WindowWidth-lipgloss.Width(styles.FooterStyleDark.Render(message))-lipgloss.Width(styles.FooterStyleDark.Render(textInput))))
+		return styles.FooterStyleDark.Render(lipgloss.JoinHorizontal(lipgloss.Center, textInput, line, message))
+	}
+
 	line := strings.Repeat(" ", utils.Max(0,
 		m.WindowWidth-lipgloss.Width(styles.FooterStyle.Render(message))-lipgloss.Width(styles.FooterStyle.Render(textInput))))
-
 	return styles.FooterStyle.Render(lipgloss.JoinHorizontal(lipgloss.Center, textInput, line, message))
 }
 
