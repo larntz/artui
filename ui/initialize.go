@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/argoproj/argo-cd/v2/pkg/apis/application/v1alpha1"
+	"github.com/charmbracelet/bubbles/cursor"
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/textinput"
 
@@ -43,7 +44,7 @@ func InitializeModel(cluster string, appEvent <-chan models.AppEvent, workerChan
 
 func initTextInput() textinput.Model {
 	ti := textinput.New()
-	ti.SetCursorMode(textinput.CursorHide)
+	ti.Cursor.SetMode(cursor.CursorHide)
 	ti.Prompt = " "
 	ti.PromptStyle.PaddingLeft(0)
 	ti.CharLimit = 20

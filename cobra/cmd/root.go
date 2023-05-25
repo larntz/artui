@@ -90,7 +90,7 @@ var rootCmd = &cobra.Command{
 			}
 		}()
 
-		if err := p.Start(); err != nil {
+		if _, err := p.Run(); err != nil {
 			panic(err)
 		}
 		// wait for workers to shutdown
